@@ -1,3 +1,4 @@
+import { LoginSResponse, Tokens } from '@/common/interfaces';
 import { User } from '@/user/entities/user.entity';
 import { UserService } from '@/user/user.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
@@ -13,7 +14,7 @@ export class AuthService {
     private configService: ConfigService,
   ) {}
 
-  async validateUser(email: string, password: string): Promise<any> {
+  async validateUser(email: string, password: string): Promise<User | null> {
     const user = await this.userService.findOneByParams({
       email,
     });
@@ -29,7 +30,7 @@ export class AuthService {
     return null;
   }
 
-  async login(user: User) {
+  async login(user: User): Promise<LoginSResponse> {
     const existingUser = await this.userService.login(user);
     const { accessToken, refreshToken } = await this.generateTokens(
       user.email,
@@ -41,12 +42,12 @@ export class AuthService {
     return { existingUser, accessToken, refreshToken };
   }
 
-  private async generateTokens(
+  async generateTokens(
     email: string,
     role: string,
     id: number,
     name: string,
-  ) {
+  ): Promise<Tokens> {
     const [accessToken, refreshToken] = await Promise.all([
       await this.jwtService.signAsync({
         email: email,

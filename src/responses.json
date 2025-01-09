@@ -1,0 +1,13 @@
+{
+  "register": {
+    "email": "hiproudiquauxe-8489@yopmail.com",
+    "name": "John",
+    "id": 16,
+    "role": "user",
+    "isLoggedIn": false,
+    "isVerifyEmail": false
+  },
+  "verifyEmail": {
+    "accesToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6....."
+  }
+}
