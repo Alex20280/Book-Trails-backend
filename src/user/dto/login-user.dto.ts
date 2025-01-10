@@ -1,19 +1,24 @@
-import { emailRegex } from '@/common/regexp';
+import { emailRegex, passwordRegex } from '@/common/regexp';
 import { lowerCaseTransformer } from '@/common/transformers/to-lower-case';
 import { noSpaces } from '@/common/validators/email.validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsString, Matches } from 'class-validator';
+import { IsString, Matches, MaxLength, MinLength } from 'class-validator';
 
 export class LoginUserDto {
   @ApiProperty({ example: 'example@ex.com' })
   @Transform(lowerCaseTransformer)
   @noSpaces({ message: 'The email address cannot contain spaces' })
   @Matches(emailRegex, { message: 'Incorrect email format' })
-  @ApiProperty()
-  email: string;
+  readonly email: string;
 
+  @ApiProperty({ example: '182j2nsdk' })
   @IsString()
-  @ApiProperty()
-  password: string;
+  @Matches(passwordRegex, {
+    message:
+      'the password must contain one capital letter, one digit and one special character',
+  })
+  @MinLength(8)
+  @MaxLength(20)
+  readonly password: string;
 }
