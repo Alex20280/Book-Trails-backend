@@ -1,19 +1,27 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOneOptions, Repository } from 'typeorm';
-import { User } from './entities/user.entity';
 import * as bcrypt from 'bcrypt';
+import { EmailService } from '@/mailer/email.service';
+import { randomBytes } from 'crypto';
+import { VerifyEmailDto } from '@/auth/dto/verify-email.dto';
+import { User } from '@/user/entities/user.entity';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    readonly emailService: EmailService,
   ) {}
 
-  async create(payload: CreateUserDto) {
+  async create(payload: CreateUserDto): Promise<User> {
     const existingUser = await this.userRepository.findOneBy({
       email: payload.email,
     });
@@ -23,9 +31,36 @@ export class UserService {
     }
 
     const newUser = new User(payload);
+    const token = randomBytes(2).toString('hex');
+
     newUser.password = await bcrypt.hash(payload.password, 10);
+    newUser.emailVerificationToken = token;
+
+    await this.emailService.sendEmailVerification(payload.email, token);
 
     return await this.userRepository.save(newUser);
+  }
+
+  async verifyEmail(payload: VerifyEmailDto): Promise<User> {
+    const { email, emailVerificationToken } = payload;
+    try {
+      const user = await this.userRepository.findOneBy({
+        email,
+        emailVerificationToken,
+      });
+
+      if (!user) {
+        throw new BadRequestException('Invalid token');
+      }
+
+      user.isVerifyEmail = true;
+      user.emailVerificationToken = null;
+      user.isLoggedIn = true;
+
+      return await this.userRepository.save(user);
+    } catch (error) {
+      throw error;
+    }
   }
 
   async login(user: User) {

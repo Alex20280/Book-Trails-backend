@@ -30,9 +30,18 @@ export class User {
   @Column({ default: false })
   isLoggedIn: boolean;
 
+  @Column({ default: false })
+  isVerifyEmail: boolean;
+
+  @Exclude()
+  @Column({ nullable: true })
+  emailVerificationToken: string;
+
+  @Exclude()
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
+  @Exclude()
   @UpdateDateColumn({
     type: 'timestamp',
     default: () => 'CURRENT_TIMESTAMP',
@@ -42,11 +51,7 @@ export class User {
 
   constructor(payload?: CreateUserDto) {
     if (!payload) return;
-
     this.email = payload.email;
-
-    this.name = payload.email
-      .split('@')[0]
-      .replace(/^\w/, (c) => c.toUpperCase());
+    this.name = payload.name;
   }
 }

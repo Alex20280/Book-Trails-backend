@@ -8,6 +8,7 @@ import { User } from '@/user/entities/user.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LocalStrategy } from './strategies/local.startegy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { EmailService } from '@/mailer/email.service';
 
 @Module({
   imports: [
@@ -23,6 +24,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, UserService, LocalStrategy],
+  providers: [AuthService, UserService, LocalStrategy, EmailService],
 })
 export class AuthModule {}
