@@ -34,6 +34,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "cloudinary": "^2.5.1",
+    "google-auth-library": "^9.15.0",
     "i": "^0.3.7",
     "nodemailer": "^6.9.16",
     "npm": "^10.9.2",

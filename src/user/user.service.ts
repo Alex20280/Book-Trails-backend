@@ -1,6 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 
-import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
