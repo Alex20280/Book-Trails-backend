@@ -5,6 +5,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { SetNewPasswordDto } from './dto/set-new-passwor.dto';
 
 @Injectable()
 export class AuthService {
@@ -40,6 +41,15 @@ export class AuthService {
     );
 
     return { existingUser, accessToken, refreshToken };
+  }
+
+  async forgetPassword(email: string) {
+    return await this.userService.forgetPassword(email);
+  }
+
+  async setNewPassword(payload: SetNewPasswordDto): Promise<LoginSResponse> {
+    const user = await this.userService.setNewPassword(payload);
+    return await this.login(user);
   }
 
   async generateTokens(

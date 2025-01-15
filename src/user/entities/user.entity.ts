@@ -38,6 +38,10 @@ export class User {
   emailVerificationToken: string;
 
   @Exclude()
+  @Column({ nullable: true })
+  resetPasswordCode: string;
+
+  @Exclude()
   @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 

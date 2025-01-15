@@ -15,24 +15,37 @@ export class EmailService {
     },
   });
 
-  async sendEmailVerification(email: string, token: string) {
-    const mailOptions = {
-      from: process.env.GOOGLE_EMAIL,
-      to: email,
-      subject: 'Email Verification',
-      html: `
+  async sendEmail(email: string, token: string, isPasswordReset: boolean) {
+    const subject = isPasswordReset
+      ? 'Password Reset Request'
+      : 'Email Verification';
+    const html = isPasswordReset
+      ? `
+          <p>Hello,</p>
+          <p>We received a request to reset your password. Please use the following confirmation code to proceed:</p>
+          <p style="text-align: center; font-weight: bold; font-size: 30px;">${token}</p>
+          <p>If you did not request a password reset, please ignore this email.</p>
+          <p>Thank you!</p>
+        `
+      : `
           <p>Hello,</p>
           <p>Please confirm your email address by entering the following confirmation code:</p>
           <p style="text-align: center; font-weight: bold; font-size: 30px;">${token}</p>
           <p>Thank you!</p>
-      `,
+        `;
+
+    const mailOptions = {
+      from: process.env.GOOGLE_EMAIL,
+      to: email,
+      subject,
+      html,
     };
 
     this.transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
         this.logger.error(error);
       } else {
-        this.logger.log(`Email sent to ${email}: ` + info.response);
+        this.logger.log(`${subject} email sent to ${email}: ` + info.response);
       }
     });
   }
