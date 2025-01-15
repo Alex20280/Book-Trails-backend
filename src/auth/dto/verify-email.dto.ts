@@ -16,5 +16,5 @@ export class VerifyEmailDto {
   @ApiProperty({ example: '2344' })
   @IsString()
   @IsNotEmpty()
-  readonly emailVerificationToken: string;
+  readonly code: string;
 }

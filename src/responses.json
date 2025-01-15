@@ -7,7 +7,20 @@
     "isLoggedIn": false,
     "isVerifyEmail": false
   },
+
   "verifyEmail": {
     "accesToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6....."
+  },
+
+  "userLogin": {
+    "existingUser": {
+      "id": 17,
+      "name": "John",
+      "email": "bauraveppeixau-2328@yopmail.com",
+      "role": "user",
+      "isLoggedIn": true,
+      "isVerifyEmail": true
+    },
+    "accessToken": "jwt"
   }
 }

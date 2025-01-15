@@ -9,6 +9,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { LocalStrategy } from './strategies/local.startegy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EmailService } from '@/mailer/email.service';
+import { JwtStrategy } from './strategies/jwt.startegy';
 
 @Module({
   imports: [
@@ -24,6 +25,12 @@ import { EmailService } from '@/mailer/email.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, UserService, LocalStrategy, EmailService],
+  providers: [
+    AuthService,
+    UserService,
+    LocalStrategy,
+    EmailService,
+    JwtStrategy,
+  ],
 })
 export class AuthModule {}
