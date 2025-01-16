@@ -8,6 +8,7 @@ import { dataSourceOptions } from './db/dbconfig';
 import { AuthModule } from './auth/auth.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { NotFoundInterceptor } from './common/interceptors';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { NotFoundInterceptor } from './common/interceptors';
     }),
     UserModule,
     AuthModule,
+    CloudinaryModule,
   ],
   controllers: [AppController],
   providers: [
