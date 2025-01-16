@@ -114,8 +114,8 @@ export class UserService {
     }
   }
 
-  async findAll() {
-    return `This action returns all user`;
+  async me(id: number) {
+    return await this.userRepository.findOneByOrFail({ id });
   }
 
   async findOne(id: number) {
