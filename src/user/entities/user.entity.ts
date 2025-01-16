@@ -17,10 +17,13 @@ export class User {
   @Column()
   name: string;
 
+  @Column({ nullable: true })
+  image: string;
+
   @Column({ unique: true })
   email: string;
 
-  @Column({ nullable: false, default: Role.User })
+  @Column({ type: 'enum', enum: Role, nullable: false, default: Role.User })
   role: Role;
 
   @Exclude()
