@@ -3,6 +3,7 @@
     "email": "hiproudiquauxe-8489@yopmail.com",
     "name": "John",
     "id": 16,
+    "image": "https://....",
     "role": "user",
     "isLoggedIn": false,
     "isVerifyEmail": false
@@ -18,6 +19,7 @@
       "name": "John",
       "email": "bauraveppeixau-2328@yopmail.com",
       "role": "user",
+      "image": "https://....",
       "isLoggedIn": true,
       "isVerifyEmail": true
     },
