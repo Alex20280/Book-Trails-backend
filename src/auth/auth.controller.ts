@@ -101,7 +101,7 @@ export class AuthController {
 
   @Public()
   @ApiOperation({
-    summary: 'send code to email for reset password',
+    summary: 'set new password',
   })
   @ApiCustomResponse(HttpStatus.OK, responses.userLogin)
   @Patch('set-new-password')

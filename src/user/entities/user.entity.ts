@@ -7,7 +7,7 @@ import {
 } from 'typeorm';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { Exclude } from 'class-transformer';
-import { Role } from '@/common/enums/role.enum';
+import { Role, SubscriptionType } from '@/common/enums/user.enum';
 
 @Entity()
 export class User {
@@ -25,6 +25,14 @@ export class User {
 
   @Column({ type: 'enum', enum: Role, nullable: false, default: Role.User })
   role: Role;
+
+  @Column({
+    type: 'enum',
+    enum: SubscriptionType,
+    nullable: false,
+    default: SubscriptionType.Basic,
+  })
+  subscriptionType: SubscriptionType;
 
   @Exclude()
   @Column()

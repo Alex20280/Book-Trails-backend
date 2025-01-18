@@ -5,6 +5,7 @@
     "id": 16,
     "image": "https://....",
     "role": "user",
+    "subscriptionType": "subscriptionType",
     "isLoggedIn": false,
     "isVerifyEmail": false
   },
@@ -20,6 +21,7 @@
       "email": "bauraveppeixau-2328@yopmail.com",
       "role": "user",
       "image": "https://....",
+      "subscriptionType": "subscriptionType",
       "isLoggedIn": true,
       "isVerifyEmail": true
     },
