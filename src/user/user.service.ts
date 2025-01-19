@@ -1,6 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 
-import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
@@ -73,5 +72,9 @@ export class UserService {
 
   async me(id: number) {
     return await this.userRepository.findOneByOrFail({ id });
+  }
+
+  async saveUser(user: User): Promise<User> {
+    return await this.userRepository.save(user);
   }
 }

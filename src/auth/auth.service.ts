@@ -4,7 +4,11 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  InternalServerErrorException,
+  Logger,
+  UnauthorizedException,
 } from '@nestjs/common';
+import { OAuth2Client } from 'google-auth-library';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -17,9 +21,11 @@ import { CreateUserDto } from '@/user/dto/create-user.dto';
 import { randomBytes } from 'crypto';
 import { EmailService } from '@/mailer/email.service';
 import { VerifyEmailDto } from './dto/verify-email.dto';
+import { GoogleLoginDto } from './dto';
 
 @Injectable()
 export class AuthService {
+  private logger: Logger;
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
@@ -28,7 +34,9 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
     private emailService: EmailService,
-  ) {}
+  ) {
+    this.logger = new Logger(this.constructor.name);
+  }
 
   async createUser(payload: CreateUserDto): Promise<User> {
     const existingUser = await this.userRepository.findOneBy({
@@ -101,6 +109,37 @@ export class AuthService {
     return user;
   }
 
+  public async verifyGoogleMobileIdToken(token: string) {
+    const client = new OAuth2Client();
+    try {
+      const ticket = await client.verifyIdToken({
+        idToken: token,
+        audience: process.env.GOOGLE_MOBILE_CLIENT_ID,
+      });
+      const payload = ticket.getPayload();
+
+      if (!payload) {
+        throw new UnauthorizedException('Invalid token payload.');
+      }
+
+      const { email, name, picture } = payload;
+      const { savedUser: user } = await this.findOrCreateFromGoogle({
+        email,
+        username: name,
+        picture,
+      });
+
+      return { googleToken: user.googleToken };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      } else {
+        this.logger.error('Error verifying Google ID token: ', error);
+        throw new InternalServerErrorException('An unexpected error occurred.');
+      }
+    }
+  }
+
   async login(user: User): Promise<LoginSResponse> {
     user.isLoggedIn = true;
     const loggedInUser = await this.userRepository.save(user);
@@ -171,6 +210,42 @@ export class AuthService {
     }
   }
 
+  async googleLogin(payload: GoogleLoginDto) {
+    try {
+      const { googleToken } = payload;
+      const user = await this.findOneByParams({ googleToken });
+
+      user.googleToken = null;
+      user.isLoggedIn = true;
+
+      const loggedInUser = await this.userRepository.save(user);
+
+      const newSession = new Session();
+      newSession.user = loggedInUser;
+      const createdSession = await this.sessionRepository.save(newSession);
+
+      const { email, role, id, name } = loggedInUser;
+
+      const tokensPayload: InTokensGenerate = {
+        email,
+        role,
+        id,
+        name,
+        sessionId: createdSession.id,
+      };
+
+      const { accessToken, refreshToken } =
+        await this.generateTokens(tokensPayload);
+
+      return {
+        accessToken,
+        refreshToken,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async generateTokens(payload: InTokensGenerate): Promise<Tokens> {
     const { email, role, id, name, sessionId } = payload;
     const tokenPayload = { email, role, sub: id, sessionId };
@@ -194,5 +269,26 @@ export class AuthService {
       accessToken,
       refreshToken,
     };
+  }
+
+  async findOrCreateFromGoogle({ email, username, picture }) {
+    let user = await this.userRepository.findOneBy({ email });
+
+    if (!user) {
+      user = await this.userRepository.save({
+        email,
+        username,
+        image: picture,
+        password: null,
+        emailVerified: true,
+        googleToken: randomBytes(8).toString('hex'),
+      });
+    } else {
+      user.googleToken = randomBytes(8).toString('hex');
+      user = await this.userRepository.save(user);
+    }
+
+    const savedUser = await this.userRepository.save(user);
+    return { savedUser };
   }
 }

@@ -10,10 +10,6 @@
     "isVerifyEmail": false
   },
 
-  "verifyEmail": {
-    "accesToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6....."
-  },
-
   "userLogin": {
     "existingUser": {
       "id": 17,
@@ -26,5 +22,10 @@
       "isVerifyEmail": true
     },
     "accessToken": "jwt"
-  }
+  },
+  "accessToken": {
+    "accesToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6....."
+  },
+
+  "googleToken": { "googleToken": "string" }
 }

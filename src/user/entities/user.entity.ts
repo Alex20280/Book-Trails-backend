@@ -38,8 +38,12 @@ export class User {
   subscriptionType: SubscriptionType;
 
   @Exclude()
-  @Column()
+  @Column({ nullable: true })
   password: string;
+
+  @Exclude()
+  @Column({ nullable: true })
+  googleToken: string;
 
   @Column({ default: false })
   isLoggedIn: boolean;

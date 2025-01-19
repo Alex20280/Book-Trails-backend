@@ -17,7 +17,6 @@ import { LocalAuthGuard } from './guards/local.auth.guard';
 import { UserDecorator } from '@/common/decorators/user.decorator';
 import { User } from '@/user/entities/user.entity';
 import { setRefreshTokenCookie } from '@/common/helpers/cookie.setter';
-import { VerifyEmailDto } from './dto/verify-email.dto';
 import { ApiCustomResponse } from '@/common/helpers/api-custom-response';
 import * as responses from '../responses.json';
 import { LoginCResponse } from '@/common/interfaces';
@@ -25,6 +24,11 @@ import { CreateUserDto } from '@/user/dto/create-user.dto';
 import { LoginUserDto } from '@/auth/dto/login-user.dto';
 import { ForgetPasswordDto } from '@/auth/dto/forget-password.dto';
 import { SetNewPasswordDto } from './dto/set-new-passwor.dto';
+import {
+  GoogleLoginDto,
+  VerifyEmailDto,
+  VerifyGoogleMobileIdTokenDto,
+} from './dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -46,7 +50,7 @@ export class AuthController {
   @ApiOperation({
     summary: 'email verification',
   })
-  @ApiCustomResponse(HttpStatus.OK, responses.verifyEmail)
+  @ApiCustomResponse(HttpStatus.OK, responses.accessToken)
   async verifyEmail(
     @Res({ passthrough: true }) response: Response,
     @Body() payload: VerifyEmailDto,
@@ -104,5 +108,35 @@ export class AuthController {
     setRefreshTokenCookie(response, refreshToken);
 
     return { loggedInUser, accessToken };
+  }
+
+  @Post('verify-google-mobile-id-token')
+  @ApiOperation({
+    summary: 'verify google user id token and if token validate authorize user',
+  })
+  @ApiCustomResponse(HttpStatus.CREATED, responses.googleToken)
+  @ApiCustomResponse(HttpStatus.OK, responses.googleToken)
+  async verifyGoogleMobileIdToken(
+    @Body() payload: VerifyGoogleMobileIdTokenDto,
+  ) {
+    return await this.authService.verifyGoogleMobileIdToken(payload.token);
+  }
+
+  @Public()
+  @Post('google/login')
+  @ApiOperation({
+    summary: 'login after choosing google account',
+  })
+  @ApiCustomResponse(HttpStatus.CREATED, responses.accessToken)
+  async googleLogin(
+    @Body() payload: GoogleLoginDto,
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<{ accessToken: string }> {
+    const { accessToken, refreshToken } =
+      await this.authService.googleLogin(payload);
+
+    setRefreshTokenCookie(response, refreshToken);
+
+    return { accessToken };
   }
 }
