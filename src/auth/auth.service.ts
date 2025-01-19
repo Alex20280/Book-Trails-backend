@@ -79,20 +79,24 @@ export class AuthService {
     }
   }
 
-  async validateUser(email: string, password: string): Promise<User | null> {
-    const user = await this.findOneByParams({
-      email,
-    });
+  async login(user: User): Promise<LoginSResponse> {
+    user.isLoggedIn = true;
+    const loggedInUser = await this.userRepository.save(user);
 
-    if (!user.password) {
-      throw new BadRequestException('You must set a password for your account');
-    }
+    const newSession = new Session();
+    newSession.user = loggedInUser;
+    const createdSession = await this.sessionRepository.save(newSession);
 
-    if (user && (await bcrypt.compare(password, user.password))) {
-      return user;
-    }
+    const payload: InTokensGenerate = {
+      email: loggedInUser.email,
+      role: loggedInUser.role,
+      id: loggedInUser.id,
+      name: loggedInUser.name,
+      sessionId: createdSession.id,
+    };
+    const { accessToken, refreshToken } = await this.generateTokens(payload);
 
-    return null;
+    return { loggedInUser, accessToken, refreshToken };
   }
 
   async findOneByParams(
@@ -140,24 +144,40 @@ export class AuthService {
     }
   }
 
-  async login(user: User): Promise<LoginSResponse> {
-    user.isLoggedIn = true;
-    const loggedInUser = await this.userRepository.save(user);
+  async googleLogin(payload: GoogleLoginDto) {
+    try {
+      const { googleToken } = payload;
+      const user = await this.findOneByParams({ googleToken });
 
-    const newSession = new Session();
-    newSession.user = loggedInUser;
-    const createdSession = await this.sessionRepository.save(newSession);
+      user.googleToken = null;
+      user.isLoggedIn = true;
 
-    const payload: InTokensGenerate = {
-      email: loggedInUser.email,
-      role: loggedInUser.role,
-      id: loggedInUser.id,
-      name: loggedInUser.name,
-      sessionId: createdSession.id,
-    };
-    const { accessToken, refreshToken } = await this.generateTokens(payload);
+      const loggedInUser = await this.userRepository.save(user);
 
-    return { loggedInUser, accessToken, refreshToken };
+      const newSession = new Session();
+      newSession.user = loggedInUser;
+      const createdSession = await this.sessionRepository.save(newSession);
+
+      const { email, role, id, name } = loggedInUser;
+
+      const tokensPayload: InTokensGenerate = {
+        email,
+        role,
+        id,
+        name,
+        sessionId: createdSession.id,
+      };
+
+      const { accessToken, refreshToken } =
+        await this.generateTokens(tokensPayload);
+
+      return {
+        accessToken,
+        refreshToken,
+      };
+    } catch (error) {
+      throw error;
+    }
   }
 
   async forgetPassword(email: string) {
@@ -210,42 +230,6 @@ export class AuthService {
     }
   }
 
-  async googleLogin(payload: GoogleLoginDto) {
-    try {
-      const { googleToken } = payload;
-      const user = await this.findOneByParams({ googleToken });
-
-      user.googleToken = null;
-      user.isLoggedIn = true;
-
-      const loggedInUser = await this.userRepository.save(user);
-
-      const newSession = new Session();
-      newSession.user = loggedInUser;
-      const createdSession = await this.sessionRepository.save(newSession);
-
-      const { email, role, id, name } = loggedInUser;
-
-      const tokensPayload: InTokensGenerate = {
-        email,
-        role,
-        id,
-        name,
-        sessionId: createdSession.id,
-      };
-
-      const { accessToken, refreshToken } =
-        await this.generateTokens(tokensPayload);
-
-      return {
-        accessToken,
-        refreshToken,
-      };
-    } catch (error) {
-      throw error;
-    }
-  }
-
   async generateTokens(payload: InTokensGenerate): Promise<Tokens> {
     const { email, role, id, name, sessionId } = payload;
     const tokenPayload = { email, role, sub: id, sessionId };
@@ -290,5 +274,21 @@ export class AuthService {
 
     const savedUser = await this.userRepository.save(user);
     return { savedUser };
+  }
+
+  async validateUser(email: string, password: string): Promise<User | null> {
+    const user = await this.findOneByParams({
+      email,
+    });
+
+    if (!user.password) {
+      throw new BadRequestException('You must set a password for your account');
+    }
+
+    if (user && (await bcrypt.compare(password, user.password))) {
+      return user;
+    }
+
+    return null;
   }
 }
