@@ -6,7 +6,7 @@ export interface Tokens {
 }
 
 export interface LoginSResponse {
-  existingUser: User;
+  loggedInUser: User;
   accessToken: string;
   refreshToken: string;
 }

@@ -1,11 +1,12 @@
 import { JwtPayload } from '@/common/interfaces/jwt.payload.intrface';
+import { SessionService } from '@/session/session.service';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(private readonly sessionService: SessionService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -17,7 +18,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (!payload) {
       throw new UnauthorizedException();
     }
-
-    return { ...payload, id: payload.sub };
+    const { sub, sessionId } = payload;
+    await this.sessionService.findOneForJwt(sub, sessionId);
+    return { ...payload, id: sub };
   }
 }

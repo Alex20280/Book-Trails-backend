@@ -2,12 +2,15 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { Exclude } from 'class-transformer';
 import { Role, SubscriptionType } from '@/common/enums/user.enum';
+import { Session } from '@/session/entities/session.entity';
 
 @Entity()
 export class User {
@@ -63,6 +66,12 @@ export class User {
     onUpdate: 'CURRENT_TIMESTAMP',
   })
   updatedAt: Date;
+
+  @OneToMany(() => Session, (session) => session.user, {
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'userId' })
+  sessions: Session[];
 
   constructor(payload?: CreateUserDto) {
     if (!payload) return;
