@@ -10,3 +10,11 @@ export interface LoginSResponse {
   accessToken: string;
   refreshToken: string;
 }
+
+export interface InTokensGenerate {
+  email: string;
+  role: string;
+  id: number;
+  name: string;
+  sessionId: number;
+}

@@ -1,4 +1,4 @@
-import { LoginSResponse, Tokens } from '@/common/interfaces';
+import { InTokensGenerate, LoginSResponse, Tokens } from '@/common/interfaces';
 import { User } from '@/user/entities/user.entity';
 import {
   BadRequestException,
@@ -109,13 +109,14 @@ export class AuthService {
     newSession.user = loggedInUser;
     const createdSession = await this.sessionRepository.save(newSession);
 
-    const { accessToken, refreshToken } = await this.generateTokens(
-      loggedInUser.email,
-      loggedInUser.role,
-      loggedInUser.id,
-      loggedInUser.name,
-      createdSession.id,
-    );
+    const payload: InTokensGenerate = {
+      email: loggedInUser.email,
+      role: loggedInUser.role,
+      id: loggedInUser.id,
+      name: loggedInUser.name,
+      sessionId: createdSession.id,
+    };
+    const { accessToken, refreshToken } = await this.generateTokens(payload);
 
     return { loggedInUser, accessToken, refreshToken };
   }
@@ -170,28 +171,17 @@ export class AuthService {
     }
   }
 
-  async generateTokens(
-    email: string,
-    role: string,
-    id: number,
-    name: string,
-    sessionId?: number,
-  ): Promise<Tokens> {
+  async generateTokens(payload: InTokensGenerate): Promise<Tokens> {
+    const { email, role, id, name, sessionId } = payload;
+    const tokenPayload = { email, role, sub: id, sessionId };
+
     const [accessToken, refreshToken] = await Promise.all([
-      await this.jwtService.signAsync({
-        email: email,
-        role: role,
-        sub: id,
-        sessionId,
-      }),
+      await this.jwtService.signAsync(tokenPayload),
 
       await this.jwtService.signAsync(
         {
-          email: email,
-          role: role,
-          sub: id,
+          ...tokenPayload,
           name: name,
-          sessionId,
         },
         {
           expiresIn: '7d',

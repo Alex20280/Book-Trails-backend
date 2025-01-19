@@ -12,7 +12,6 @@ export class CronService {
     private readonly sessionRepository: Repository<Session>,
   ) {}
 
-  // Виконання крону кожну годину
   @Cron('0 * * * *', {
     name: 'delete expired sessions',
     timeZone: 'Europe/Kyiv',
