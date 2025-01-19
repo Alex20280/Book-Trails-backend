@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { UserService } from '@/user/user.service';
 
 import { JwtModule } from '@nestjs/jwt';
 import { User } from '@/user/entities/user.entity';
@@ -10,11 +9,13 @@ import { LocalStrategy } from './strategies/local.startegy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EmailService } from '@/mailer/email.service';
 import { JwtStrategy } from './strategies/jwt.startegy';
+import { SessionService } from '@/session/session.service';
+import { Session } from '@/session/entities/session.entity';
 
 @Module({
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, Session]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -27,10 +28,10 @@ import { JwtStrategy } from './strategies/jwt.startegy';
   controllers: [AuthController],
   providers: [
     AuthService,
-    UserService,
     LocalStrategy,
     EmailService,
     JwtStrategy,
+    SessionService,
   ],
 })
 export class AuthModule {}

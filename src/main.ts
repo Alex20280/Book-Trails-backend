@@ -6,11 +6,17 @@ import {
   VersioningType,
 } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { CronService } from './cron/cron.service';
 
 async function bootstrap() {
   const PORT = process.env.PORT || 5000;
 
   const app = await NestFactory.create(AppModule);
+
+  // //temporarily
+  // const cronService = app.get(CronService); // Отримуємо сервіс
+  // await cronService.handleCron(); // Викликаємо вручну
+  // console.log('Cron Service executed manually!');
 
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));

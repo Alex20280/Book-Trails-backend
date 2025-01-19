@@ -9,6 +9,8 @@ import { AuthModule } from './auth/auth.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { NotFoundInterceptor } from './common/interceptors';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { SessionModule } from './session/session.module';
+import { CronModule } from './cron/cron.module';
 
 @Module({
   imports: [
@@ -24,10 +26,13 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
     UserModule,
     AuthModule,
     CloudinaryModule,
+    SessionModule,
+    CronModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
+
     {
       provide: APP_INTERCEPTOR,
       useClass: NotFoundInterceptor,

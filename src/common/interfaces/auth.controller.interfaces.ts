@@ -1,6 +1,6 @@
 import { User } from '@/user/entities/user.entity';
 
 export interface LoginCResponse {
-  existingUser: User;
+  loggedInUser: User;
   accessToken: string;
 }

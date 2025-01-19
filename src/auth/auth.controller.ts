@@ -10,9 +10,8 @@ import {
 import { AuthService } from './auth.service';
 import { Request as req, Response } from 'express';
 
-import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '@/common/decorators/public.decorator';
-import { UserService } from '@/user/user.service';
 import { LocalAuthGuard } from './guards/local.auth.guard';
 
 import { UserDecorator } from '@/common/decorators/user.decorator';
@@ -26,14 +25,11 @@ import { CreateUserDto } from '@/user/dto/create-user.dto';
 import { LoginUserDto } from '@/auth/dto/login-user.dto';
 import { ForgetPasswordDto } from '@/auth/dto/forget-password.dto';
 import { SetNewPasswordDto } from './dto/set-new-passwor.dto';
-// import { JwtAuthGuard } from './guards/jwt.auth.guard';
 
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    readonly userService: UserService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Public()
   @Post('register')
@@ -42,7 +38,7 @@ export class AuthController {
   })
   @ApiCustomResponse(HttpStatus.CREATED, responses.register)
   async register(@Body() payload: CreateUserDto): Promise<User> {
-    return await this.userService.create(payload);
+    return await this.authService.createUser(payload);
   }
 
   @Public()
@@ -54,20 +50,13 @@ export class AuthController {
   async verifyEmail(
     @Res({ passthrough: true }) response: Response,
     @Body() payload: VerifyEmailDto,
-  ): Promise<{ accessToken: string }> {
-    const { email, role, id, name } =
-      await this.userService.verifyEmail(payload);
-
-    const { accessToken, refreshToken } = await this.authService.generateTokens(
-      email,
-      role,
-      id,
-      name,
-    );
+  ): Promise<LoginCResponse> {
+    const { loggedInUser, accessToken, refreshToken } =
+      await this.authService.verifyUserEmail(payload);
 
     setRefreshTokenCookie(response, refreshToken);
 
-    return { accessToken };
+    return { loggedInUser, accessToken };
   }
 
   @UseGuards(LocalAuthGuard)
@@ -82,12 +71,12 @@ export class AuthController {
     @UserDecorator() user: User,
     @Res({ passthrough: true }) response: Response,
   ): Promise<LoginCResponse> {
-    const { existingUser, accessToken, refreshToken } =
+    const { loggedInUser, accessToken, refreshToken } =
       await this.authService.login(user);
 
     setRefreshTokenCookie(response, refreshToken);
 
-    return { existingUser, accessToken };
+    return { loggedInUser, accessToken };
   }
 
   @Public()
@@ -109,11 +98,11 @@ export class AuthController {
     @Body() payload: SetNewPasswordDto,
     @Res({ passthrough: true }) response: Response,
   ): Promise<LoginCResponse> {
-    const { existingUser, accessToken, refreshToken } =
+    const { loggedInUser, accessToken, refreshToken } =
       await this.authService.setNewPassword(payload);
 
     setRefreshTokenCookie(response, refreshToken);
 
-    return { existingUser, accessToken };
+    return { loggedInUser, accessToken };
   }
 }
