@@ -73,4 +73,8 @@ export class UserService {
   async me(id: number) {
     return await this.userRepository.findOneByOrFail({ id });
   }
+
+  async saveUser(user: User): Promise<User> {
+    return await this.userRepository.save(user);
+  }
 }
