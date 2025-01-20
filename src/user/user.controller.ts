@@ -53,7 +53,7 @@ export class UserController {
   })
   @UseInterceptors(FileInterceptor('image'))
   @ApiConsumes('multipart/form-data')
-  // @ApiCustomResponse(HttpStatus.OK, responses.register)
+  @ApiCustomResponse(HttpStatus.OK, responses.register)
   @Patch('update')
   async update(
     @UserDecorator('id') userId: number,
