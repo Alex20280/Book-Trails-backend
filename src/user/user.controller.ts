@@ -21,6 +21,7 @@ import { AuthService } from '@/auth/auth.service';
 
 @ApiTags('User')
 @UseGuards(JwtAuthGuard)
+@ApiBearerAuth('JWT-auth')
 @Controller('user')
 export class UserController {
   constructor(
@@ -28,7 +29,6 @@ export class UserController {
     private readonly authService: AuthService,
   ) {}
 
-  @ApiBearerAuth('JWT-auth')
   @ApiOperation({
     summary: 'view your own profile',
   })
@@ -53,5 +53,18 @@ export class UserController {
     setRefreshTokenCookie(response, refreshToken);
 
     return { loggedInUser, accessToken };
+  }
+
+  @ApiOperation({
+    summary: 'logout',
+  })
+  @ApiCustomResponse(HttpStatus.OK, responses.userLogout)
+  @Patch('logout')
+  async logout(
+    @UserDecorator('id') userId: number,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    response.clearCookie('refresh_token');
+    return await this.userService.logout(userId);
   }
 }

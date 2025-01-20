@@ -77,4 +77,14 @@ export class UserService {
   async saveUser(user: User): Promise<User> {
     return await this.userRepository.save(user);
   }
+
+  async logout(id: number) {
+    const user = await this.userRepository.findOneByOrFail({ id });
+    user.isLoggedIn = false;
+
+    const loggedOutUser = await this.userRepository.save(user);
+    await this.sessionService.closeSession(id);
+
+    return { message: 'Logout successful', userId: loggedOutUser.id };
+  }
 }

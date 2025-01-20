@@ -37,4 +37,10 @@ export class SessionService {
 
     if (!data || !data.user.isLoggedIn) throw new UnauthorizedException();
   }
+
+  async closeSession(userId: number) {
+    await this.sessionRepository.delete({
+      user: { id: userId },
+    });
+  }
 }
