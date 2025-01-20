@@ -6,7 +6,7 @@ import {
   VersioningType,
 } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { CronService } from './cron/cron.service';
+// import { CronService } from './cron/cron.service';
 
 async function bootstrap() {
   const PORT = process.env.PORT || 5000;

@@ -20,7 +20,7 @@ export class CronService {
     const EXPIRATION_HOURS = 2;
     const now = new Date();
     now.setHours(now.getHours() - EXPIRATION_HOURS);
-    console.log('now :>> ', now);
+
     const twoHoursAgo = now.toISOString();
 
     try {

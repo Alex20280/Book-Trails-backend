@@ -21,7 +21,7 @@ import { ApiCustomResponse } from '@/common/helpers/api-custom-response';
 import * as responses from '../responses.json';
 import { LoginCResponse } from '@/common/interfaces';
 import { CreateUserDto } from '@/user/dto/create-user.dto';
-import { LoginUserDto } from '@/auth/dto/login-user.dto';
+import { LoginUserDto } from '@/user/dto/login-user.dto';
 import { ForgetPasswordDto } from '@/auth/dto/forget-password.dto';
 import { SetNewPasswordDto } from './dto/set-new-passwor.dto';
 import {

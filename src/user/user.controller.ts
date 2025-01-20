@@ -5,10 +5,17 @@ import {
   HttpStatus,
   Patch,
   Res,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/auth/guards/jwt.auth.guard';
 import { UserDecorator } from '@/common/decorators/user.decorator';
 import { Request as req, Response } from 'express';
@@ -18,6 +25,9 @@ import { CreateNewPasswordDto } from '@/auth/dto/create-new-password.dto';
 import { setRefreshTokenCookie } from '@/common/helpers/cookie.setter';
 import { LoginCResponse } from '@/common/interfaces';
 import { AuthService } from '@/auth/auth.service';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { CustomParseFilePipe } from '@/common/pipes/image.pipe';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('User')
 @UseGuards(JwtAuthGuard)
@@ -36,6 +46,22 @@ export class UserController {
   @Get('me')
   async me(@UserDecorator('id') userId: number) {
     return this.userService.me(userId);
+  }
+
+  @ApiOperation({
+    summary: 'update profile',
+  })
+  @UseInterceptors(FileInterceptor('image'))
+  @ApiConsumes('multipart/form-data')
+  // @ApiCustomResponse(HttpStatus.OK, responses.register)
+  @Patch('update')
+  async update(
+    @UserDecorator('id') userId: number,
+    @Body() payload: UpdateUserDto,
+    @UploadedFile(CustomParseFilePipe)
+    image: Express.Multer.File,
+  ) {
+    return await this.userService.update(userId, payload, image);
   }
 
   @ApiOperation({
