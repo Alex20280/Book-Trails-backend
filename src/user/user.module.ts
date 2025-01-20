@@ -8,6 +8,7 @@ import { SessionService } from '@/session/session.service';
 import { Session } from '@/session/entities/session.entity';
 import { AuthService } from '@/auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
+import { CloudinaryService } from '@/cloudinary/cloudinary.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([User, Session])],
@@ -18,6 +19,7 @@ import { JwtService } from '@nestjs/jwt';
     SessionService,
     AuthService,
     JwtService,
+    CloudinaryService,
   ],
 })
 export class UserModule {}

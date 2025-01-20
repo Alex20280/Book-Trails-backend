@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { EmailService } from '@/mailer/email.service';
 import { randomBytes } from 'crypto';
@@ -10,6 +10,9 @@ import { SetNewPasswordDto } from '@/auth/dto/set-new-passwor.dto';
 import { SessionService } from '@/session/session.service';
 import { CreateNewPasswordDto } from '@/auth/dto/create-new-password.dto';
 import { AuthService } from '@/auth/auth.service';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { publicIdExtract } from '@/common/helpers/public-id-extraction';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Injectable()
 export class UserService {
@@ -19,6 +22,8 @@ export class UserService {
     readonly emailService: EmailService,
     readonly sessionService: SessionService,
     readonly authService: AuthService,
+    readonly cloudinaryService: CloudinaryService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async forgetPassword(email: string): Promise<boolean> {
@@ -72,6 +77,50 @@ export class UserService {
 
   async me(id: number) {
     return await this.userRepository.findOneByOrFail({ id });
+  }
+
+  async update(
+    id: number,
+    payload: UpdateUserDto,
+    image?: Express.Multer.File,
+  ) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const user = await queryRunner.manager.findOneByOrFail(User, { id });
+
+      if (payload.name) {
+        user.name = payload.name;
+      }
+
+      let oldImage: string | null = null;
+
+      if (image) {
+        if (user.image) {
+          oldImage = user.image;
+        }
+
+        const { secure_url } = await this.cloudinaryService.uploadFile(image);
+        user.image = secure_url;
+      }
+
+      await queryRunner.manager.save(user);
+      await queryRunner.commitTransaction();
+
+      if (oldImage) {
+        const publicId = publicIdExtract(oldImage);
+        await this.cloudinaryService.deleteFile(publicId);
+      }
+
+      return user;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async saveUser(user: User): Promise<User> {
