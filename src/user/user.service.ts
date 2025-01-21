@@ -1,14 +1,10 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
 import { EmailService } from '@/mailer/email.service';
 import { randomBytes } from 'crypto';
 import { User } from '@/user/entities/user.entity';
-import { SetNewPasswordDto } from '@/auth/dto/set-new-passwor.dto';
 import { SessionService } from '@/session/session.service';
-import { CreateNewPasswordDto } from '@/auth/dto/create-new-password.dto';
 import { AuthService } from '@/auth/auth.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { publicIdExtract } from '@/common/helpers/public-id-extraction';
