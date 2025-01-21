@@ -1,6 +1,5 @@
-import { AtLeastOneFieldValidator } from '@/common/validators/not-empty-object.validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, Validate } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class UpdateUserDto {
   @ApiPropertyOptional()
@@ -12,7 +11,4 @@ export class UpdateUserDto {
   @ApiPropertyOptional({ type: 'string', format: 'binary' })
   @IsOptional()
   image?: Express.Multer.File;
-
-  @Validate(AtLeastOneFieldValidator)
-  atLeastOneField: boolean;
 }

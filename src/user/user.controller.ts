@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -64,6 +65,9 @@ export class UserController {
     @UploadedFile(CustomParseFilePipe)
     image: Express.Multer.File,
   ) {
+    if (!image && !payload.name) {
+      throw new BadRequestException();
+    }
     return await this.userService.update(userId, payload, image);
   }
 
