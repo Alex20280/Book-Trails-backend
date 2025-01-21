@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpStatus,
   Patch,
@@ -29,6 +30,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { CustomParseFilePipe } from '@/common/pipes/image.pipe';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UpdateEmailDto } from './dto/update-email.dto';
+import { DeleteAccountDto } from './dto/delete-account.dto';
 
 @ApiTags('User')
 @UseGuards(JwtAuthGuard)
@@ -105,5 +107,19 @@ export class UserController {
   ) {
     response.clearCookie('refresh_token');
     return await this.userService.logout(userId);
+  }
+
+  @ApiOperation({
+    summary: 'delete account',
+  })
+  // @ApiCustomResponse(HttpStatus.OK, responses.userLogout)
+  @Delete('account')
+  async deleteAccount(
+    @UserDecorator('id') userId: number,
+    @Body() payload: DeleteAccountDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    response.clearCookie('refresh_token');
+    return await this.userService.delete(userId, payload);
   }
 }

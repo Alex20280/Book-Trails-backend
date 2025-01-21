@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { EmailService } from '@/mailer/email.service';
@@ -9,6 +9,7 @@ import { AuthService } from '@/auth/auth.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { publicIdExtract } from '@/common/helpers/public-id-extraction';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { DeleteAccountDto } from './dto/delete-account.dto';
 
 @Injectable()
 export class UserService {
@@ -93,5 +94,19 @@ export class UserService {
     await this.sessionService.closeSession(id);
 
     return { message: 'Logout successful', userId: loggedOutUser.id };
+  }
+
+  async delete(id: number, payload: DeleteAccountDto): Promise<boolean> {
+    try {
+      const result = await this.userRepository.delete({
+        id,
+        email: payload.email,
+      });
+
+      return result.affected > 0;
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      throw new InternalServerErrorException('Failed to delete the account');
+    }
   }
 }
