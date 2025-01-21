@@ -37,44 +37,6 @@ export class UserService {
     return true;
   }
 
-  async setNewPassword(
-    payload: SetNewPasswordDto | CreateNewPasswordDto,
-  ): Promise<User> {
-    try {
-      let user: User;
-      let password: string;
-
-      if ('code' in payload) {
-        const { email, newPassword, code } = payload as SetNewPasswordDto;
-
-        user = await this.userRepository.findOneBy({
-          email,
-          resetPasswordCode: code,
-        });
-
-        if (!user) {
-          throw new BadRequestException('Invalid reset code');
-        }
-
-        user.resetPasswordCode = null;
-        password = newPassword;
-      } else {
-        const { email, newPassword } = payload as CreateNewPasswordDto;
-
-        user = await this.userRepository.findOneBy({ email });
-        if (!user) {
-          throw new BadRequestException('User not found');
-        }
-        password = newPassword;
-      }
-
-      user.password = await bcrypt.hash(password, 10);
-      return await this.userRepository.save(user);
-    } catch (error) {
-      throw error;
-    }
-  }
-
   async me(id: number) {
     return await this.userRepository.findOneByOrFail({ id });
   }

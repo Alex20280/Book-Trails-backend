@@ -32,5 +32,9 @@
     "userId": "number"
   },
 
-  "googleToken": { "googleToken": "string" }
+  "googleToken": { "googleToken": "string" },
+
+  "changeEmail": {
+    "message": "A confirmation code has been sent to your new email address."
+  }
 }

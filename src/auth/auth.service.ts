@@ -15,13 +15,14 @@ import * as bcrypt from 'bcrypt';
 import { SetNewPasswordDto } from './dto/set-new-passwor.dto';
 import { CreateNewPasswordDto } from './dto/create-new-password.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOneOptions, Repository } from 'typeorm';
+import { DataSource, FindOneOptions, Repository } from 'typeorm';
 import { Session } from '@/session/entities/session.entity';
 import { CreateUserDto } from '@/user/dto/create-user.dto';
 import { randomBytes } from 'crypto';
 import { EmailService } from '@/mailer/email.service';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { GoogleLoginDto } from './dto';
+import { UpdateEmailDto } from '@/user/dto/update-email.dto';
 
 @Injectable()
 export class AuthService {
@@ -31,9 +32,10 @@ export class AuthService {
     private userRepository: Repository<User>,
     @InjectRepository(Session)
     private sessionRepository: Repository<Session>,
-    private jwtService: JwtService,
+    readonly jwtService: JwtService,
     private configService: ConfigService,
     private emailService: EmailService,
+    private readonly dataSource: DataSource,
   ) {
     this.logger = new Logger(this.constructor.name);
   }
@@ -58,7 +60,7 @@ export class AuthService {
     return await this.userRepository.save(newUser);
   }
 
-  async verifyUserEmail(payload: VerifyEmailDto): Promise<LoginSResponse> {
+  async verifyUserEmail(payload: VerifyEmailDto): Promise<Tokens> {
     const { email, code } = payload;
     try {
       const user = await this.userRepository.findOneBy({
@@ -72,8 +74,8 @@ export class AuthService {
 
       user.isVerifyEmail = true;
       user.emailVerificationToken = null;
-
-      return await this.login(user);
+      const { accessToken, refreshToken } = await this.login(user);
+      return { accessToken, refreshToken };
     } catch (error) {
       throw error;
     }
@@ -180,7 +182,7 @@ export class AuthService {
     }
   }
 
-  async forgetPassword(email: string) {
+  async forgetPassword(email: string): Promise<boolean> {
     const user = await this.findOneByParams({ email });
     const code = randomBytes(2).toString('hex');
 
@@ -224,9 +226,55 @@ export class AuthService {
 
       user.password = await bcrypt.hash(password, 10);
       const savedUser = await this.userRepository.save(user);
+
+      await this.sessionRepository.delete({
+        user: { id: user.id },
+      });
+
       return await this.login(savedUser);
     } catch (error) {
       throw error;
+    }
+  }
+
+  async changeEmail(
+    id: number,
+    payload: UpdateEmailDto,
+  ): Promise<{ message: string }> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const user = await queryRunner.manager.findOneByOrFail(User, {
+        id,
+        email: payload.email,
+      });
+
+      const token = randomBytes(2).toString('hex');
+      await this.emailService.sendEmail(payload.newEmail, token, false);
+
+      user.emailVerificationToken = token;
+      user.email = payload.newEmail;
+      user.isVerifyEmail = false;
+      user.isLoggedIn = false;
+
+      await queryRunner.manager.save(user);
+
+      await queryRunner.manager.delete(Session, {
+        user: { id: user.id },
+      });
+
+      await queryRunner.commitTransaction();
+
+      return {
+        message: 'A confirmation code has been sent to your new email address.',
+      };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
   }
 
