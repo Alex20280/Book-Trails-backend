@@ -28,6 +28,7 @@ import { AuthService } from '@/auth/auth.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CustomParseFilePipe } from '@/common/pipes/image.pipe';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { UpdateEmailDto } from './dto/update-email.dto';
 
 @ApiTags('User')
 @UseGuards(JwtAuthGuard)
@@ -79,6 +80,18 @@ export class UserController {
     setRefreshTokenCookie(response, refreshToken);
 
     return { loggedInUser, accessToken };
+  }
+
+  @ApiOperation({
+    summary: 'change email',
+  })
+  @ApiCustomResponse(HttpStatus.OK, responses.changeEmail)
+  @Patch('change-email')
+  async changeEmail(
+    @UserDecorator('id') userId: number,
+    @Body() payload: UpdateEmailDto,
+  ): Promise<{ message: string }> {
+    return await this.authService.changeEmail(userId, payload);
   }
 
   @ApiOperation({

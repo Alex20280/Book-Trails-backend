@@ -19,7 +19,7 @@ import { User } from '@/user/entities/user.entity';
 import { setRefreshTokenCookie } from '@/common/helpers/cookie.setter';
 import { ApiCustomResponse } from '@/common/helpers/api-custom-response';
 import * as responses from '../responses.json';
-import { LoginCResponse } from '@/common/interfaces';
+import { LoginCResponse, Tokens } from '@/common/interfaces';
 import { CreateUserDto } from '@/user/dto/create-user.dto';
 import { LoginUserDto } from '@/user/dto/login-user.dto';
 import { ForgetPasswordDto } from '@/auth/dto/forget-password.dto';
@@ -29,6 +29,7 @@ import {
   VerifyEmailDto,
   VerifyGoogleMobileIdTokenDto,
 } from './dto';
+import { DeepPartial } from 'typeorm';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -54,13 +55,13 @@ export class AuthController {
   async verifyEmail(
     @Res({ passthrough: true }) response: Response,
     @Body() payload: VerifyEmailDto,
-  ): Promise<LoginCResponse> {
-    const { loggedInUser, accessToken, refreshToken } =
+  ): Promise<DeepPartial<Tokens>> {
+    const { accessToken, refreshToken } =
       await this.authService.verifyUserEmail(payload);
 
     setRefreshTokenCookie(response, refreshToken);
 
-    return { loggedInUser, accessToken };
+    return { accessToken };
   }
 
   @UseGuards(LocalAuthGuard)
