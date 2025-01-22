@@ -17,7 +17,7 @@ export class CronService {
     timeZone: 'Europe/Kyiv',
   })
   async handleCron(): Promise<void> {
-    const EXPIRATION_HOURS = 2;
+    const EXPIRATION_HOURS = 4;
     const now = new Date();
     now.setHours(now.getHours() - EXPIRATION_HOURS);
 

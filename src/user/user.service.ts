@@ -87,13 +87,7 @@ export class UserService {
   }
 
   async logout(id: number) {
-    const user = await this.userRepository.findOneByOrFail({ id });
-    user.isLoggedIn = false;
-
-    const loggedOutUser = await this.userRepository.save(user);
-    await this.sessionService.closeSession(id);
-
-    return { message: 'Logout successful', userId: loggedOutUser.id };
+    return await this.authService.logout(id);
   }
 
   async delete(id: number, payload: DeleteAccountDto): Promise<boolean> {

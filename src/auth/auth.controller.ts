@@ -6,11 +6,13 @@ import {
   UseGuards,
   HttpStatus,
   Patch,
+  Request,
+  BadRequestException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Request as req, Response } from 'express';
 
-import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '@/common/decorators/public.decorator';
 import { LocalAuthGuard } from './guards/local.auth.guard';
 
@@ -30,6 +32,7 @@ import {
   VerifyGoogleMobileIdTokenDto,
 } from './dto';
 import { DeepPartial } from 'typeorm';
+import { RefreshJwtAuthGuard } from './guards/jwt.refresh.auth.guard';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -135,6 +138,35 @@ export class AuthController {
   ): Promise<{ accessToken: string }> {
     const { accessToken, refreshToken } =
       await this.authService.googleLogin(payload);
+
+    setRefreshTokenCookie(response, refreshToken);
+
+    return { accessToken };
+  }
+
+  @Public()
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(RefreshJwtAuthGuard)
+  @Post('refresh-token')
+  @ApiOperation({
+    summary: 'generate new tokens',
+  })
+  @ApiCustomResponse(HttpStatus.CREATED, responses.accessToken)
+  async refreshToken(
+    @Request() request: req,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    if (!request.headers.cookie)
+      throw new BadRequestException('Cookie is required!');
+
+    const existingRefreshToken = request.headers.cookie
+      ?.split(';')
+      .map((cookie) => cookie.trim())
+      .find((cookie) => cookie.startsWith('refresh_token='))
+      ?.split('=')[1];
+    // return existingRefreshToken;
+    const { accessToken, refreshToken } =
+      await this.authService.refreshToken(existingRefreshToken);
 
     setRefreshTokenCookie(response, refreshToken);
 
