@@ -23,6 +23,7 @@ import { EmailService } from '@/mailer/email.service';
 import { VerifyEmailDto } from './dto/verify-email.dto';
 import { GoogleLoginDto } from './dto';
 import { UpdateEmailDto } from '@/user/dto/update-email.dto';
+import { SessionService } from '@/session/session.service';
 
 @Injectable()
 export class AuthService {
@@ -35,6 +36,7 @@ export class AuthService {
     readonly jwtService: JwtService,
     private configService: ConfigService,
     private emailService: EmailService,
+    readonly sessionService: SessionService,
     private readonly dataSource: DataSource,
   ) {
     this.logger = new Logger(this.constructor.name);
@@ -99,6 +101,16 @@ export class AuthService {
     const { accessToken, refreshToken } = await this.generateTokens(payload);
 
     return { loggedInUser, accessToken, refreshToken };
+  }
+
+  async logout(id: number) {
+    const user = await this.userRepository.findOneByOrFail({ id });
+    user.isLoggedIn = false;
+
+    const loggedOutUser = await this.userRepository.save(user);
+    await this.sessionService.closeSession(id);
+
+    return { message: 'Logout successful', userId: loggedOutUser.id };
   }
 
   async findOneByParams(
@@ -338,5 +350,47 @@ export class AuthService {
     }
 
     return null;
+  }
+
+  async refreshToken(previousRefreshToken: string) {
+    const payload = await this.jwtService.verifyAsync(previousRefreshToken, {
+      secret: this.configService.get<string>('REFRESH_JWT_SECRET'),
+    });
+
+    const now = Math.floor(Date.now() / 1000);
+
+    if (!payload) {
+      throw new UnauthorizedException('Invalid token');
+    }
+
+    if (payload.exp < now) {
+      await this.logout(payload.sub);
+      throw new UnauthorizedException('Invalid token');
+    }
+
+    const user = await this.userRepository.findOneBy({
+      id: payload.sub,
+      email: payload.email,
+    });
+
+    if (!user) {
+      throw new BadRequestException('Invalid tiken!');
+    }
+
+    await this.sessionService.closeSession(payload.sub);
+
+    const newSessionId = await this.sessionService.create(user);
+
+    const tokensPayload: InTokensGenerate = {
+      email: payload.email,
+      role: payload.role,
+      id: payload.sub,
+      name: payload.name,
+      sessionId: newSessionId,
+    };
+    const { accessToken, refreshToken } =
+      await this.generateTokens(tokensPayload);
+
+    return { accessToken, refreshToken };
   }
 }

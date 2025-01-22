@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserModule } from './user/user.module';
@@ -11,6 +11,7 @@ import { NotFoundInterceptor } from './common/interceptors';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { SessionModule } from './session/session.module';
 import { CronModule } from './cron/cron.module';
+import { AppLoggerMiddleware } from './common/middlewares/app-logger';
 
 @Module({
   imports: [
@@ -40,4 +41,8 @@ import { CronModule } from './cron/cron.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(AppLoggerMiddleware).forRoutes('*');
+  }
+}

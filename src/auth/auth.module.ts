@@ -11,6 +11,7 @@ import { EmailService } from '@/mailer/email.service';
 import { JwtStrategy } from './strategies/jwt.startegy';
 import { SessionService } from '@/session/session.service';
 import { Session } from '@/session/entities/session.entity';
+import { RefreshJwtStrategy } from './strategies/jwt-refresh.strategy';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { Session } from '@/session/entities/session.entity';
     EmailService,
     JwtStrategy,
     SessionService,
+    RefreshJwtStrategy,
   ],
 })
 export class AuthModule {}
