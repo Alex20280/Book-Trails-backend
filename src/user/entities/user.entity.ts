@@ -71,9 +71,7 @@ export class User {
   })
   updatedAt: Date;
 
-  @OneToMany(() => Session, (session) => session.user, {
-    onDelete: 'CASCADE',
-  })
+  @OneToMany(() => Session, (session) => session.user, { eager: true })
   @JoinColumn({ name: 'userId' })
   sessions: Session[];
 
