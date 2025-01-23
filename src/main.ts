@@ -46,7 +46,7 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('Book-Trails-backend')
-    .setDescription('base URL: ')
+    .setDescription('base URL: https://book-trails-backend.onrender.com/api/v1')
     .setVersion('1.0.1')
     .addBearerAuth(
       {
