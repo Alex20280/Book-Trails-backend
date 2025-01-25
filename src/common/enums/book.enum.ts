@@ -9,3 +9,9 @@ export enum Source {
   Ggifted = 'gifted',
   Borrowed = 'borrowed',
 }
+
+export enum BookType {
+  Soft = 'soft',
+  Audio = 'audio',
+  EBook = 'e-book',
+}

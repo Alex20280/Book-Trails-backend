@@ -1,4 +1,4 @@
-import { BookStatus, Source } from '@/common/enums/book.enum';
+import { BookStatus, BookType, Source } from '@/common/enums/book.enum';
 import { User } from '@/user/entities/user.entity';
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { CreateBookDto } from '../dto/create-book.dto';
@@ -45,6 +45,13 @@ export class Book {
     default: null,
   })
   source: Source;
+
+  @Column({
+    type: 'enum',
+    enum: BookType,
+    default: BookType.Soft,
+  })
+  type: Source;
 
   @Column({ default: false })
   isLegacy: boolean;

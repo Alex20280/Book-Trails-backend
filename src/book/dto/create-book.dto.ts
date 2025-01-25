@@ -1,4 +1,4 @@
-import { BookStatus, Source } from '@/common/enums/book.enum';
+import { BookStatus, BookType, Source } from '@/common/enums/book.enum';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
@@ -48,6 +48,11 @@ export class CreateBookDto {
   @IsNotEmpty()
   @IsEnum(BookStatus)
   status: BookStatus;
+
+  @ApiProperty({ example: BookType.Soft })
+  @IsNotEmpty()
+  @IsEnum(BookType)
+  type: BookType;
 
   @ApiPropertyOptional({ example: Source.Purchased })
   @IsEnum(Source)
