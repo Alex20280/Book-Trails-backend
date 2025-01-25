@@ -47,9 +47,12 @@ export class BookController {
     return this.bookService.create(userId, createBookDto, image);
   }
 
+  @ApiOperation({
+    summary: 'return user`s books',
+  })
   @Get()
-  findAll() {
-    return this.bookService.findAll();
+  async findAll(@UserDecorator('id') userId: number): Promise<Book[]> {
+    return this.bookService.findAll(userId);
   }
 
   @Get(':id')

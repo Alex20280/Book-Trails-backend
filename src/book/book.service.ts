@@ -35,8 +35,8 @@ export class BookService {
     return await this.bookRepository.save(newBook);
   }
 
-  findAll() {
-    return `This action returns all book`;
+  async findAll(userId: number): Promise<Book[]> {
+    return await this.bookRepository.find({ where: { user: { id: userId } } });
   }
 
   findOne(id: number) {
