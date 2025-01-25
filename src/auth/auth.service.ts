@@ -85,11 +85,12 @@ export class AuthService {
 
   async login(user: User): Promise<LoginSResponse> {
     user.isLoggedIn = true;
-    const loggedInUser = await this.userRepository.save(user);
 
     const newSession = new Session();
-    newSession.user = loggedInUser;
     const createdSession = await this.sessionRepository.save(newSession);
+
+    user.sessions.push(createdSession);
+    const loggedInUser = await this.userRepository.save(user);
 
     const payload: InTokensGenerate = {
       email: loggedInUser.email,
