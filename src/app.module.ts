@@ -12,6 +12,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { SessionModule } from './session/session.module';
 import { CronModule } from './cron/cron.module';
 import { AppLoggerMiddleware } from './common/middlewares/app-logger';
+import { BookModule } from './book/book.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { AppLoggerMiddleware } from './common/middlewares/app-logger';
     CloudinaryModule,
     SessionModule,
     CronModule,
+    BookModule,
   ],
   controllers: [AppController],
   providers: [

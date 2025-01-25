@@ -11,6 +11,7 @@ import { CreateUserDto } from '../dto/create-user.dto';
 import { Exclude } from 'class-transformer';
 import { Role, SubscriptionType } from '@/common/enums/user.enum';
 import { Session } from '@/session/entities/session.entity';
+import { Book } from '@/book/entities/book.entity';
 
 @Entity()
 export class User {
@@ -74,6 +75,9 @@ export class User {
   @OneToMany(() => Session, (session) => session.user, { eager: true })
   @JoinColumn({ name: 'userId' })
   sessions: Session[];
+
+  @OneToMany(() => Book, (book) => book.user)
+  books: Book[];
 
   constructor(payload?: CreateUserDto) {
     if (!payload) return;
