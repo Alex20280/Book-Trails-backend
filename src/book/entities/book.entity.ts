@@ -1,8 +1,15 @@
 import { BookStatus, BookType, Source } from '@/common/enums/book.enum';
 import { User } from '@/user/entities/user.entity';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { CreateBookDto } from '../dto/create-book.dto';
 import { Exclude } from 'class-transformer';
+import { BookSession } from '@/book-session/entities/book-session.entity';
 
 @Entity()
 export class Book {
@@ -62,6 +69,10 @@ export class Book {
   @Exclude()
   @ManyToOne(() => User, (user) => user.books, { onDelete: 'CASCADE' })
   user: User;
+
+  @Exclude()
+  @OneToMany(() => BookSession, (bookSession) => bookSession.book)
+  bookSessions: BookSession[];
 
   constructor(payload?: CreateBookDto) {
     if (!payload) return;
