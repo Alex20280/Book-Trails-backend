@@ -13,6 +13,8 @@ import { SessionModule } from './session/session.module';
 import { CronModule } from './cron/cron.module';
 import { AppLoggerMiddleware } from './common/middlewares/app-logger';
 import { BookModule } from './book/book.module';
+import { BookSessionModule } from './book-session/book-session.module';
+import { PauseModule } from './pause/pause.module';
 
 @Module({
   imports: [
@@ -32,6 +34,8 @@ import { BookModule } from './book/book.module';
     SessionModule,
     CronModule,
     BookModule,
+    BookSessionModule,
+    PauseModule,
   ],
   controllers: [AppController],
   providers: [
