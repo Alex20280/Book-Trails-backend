@@ -3,6 +3,7 @@ import { User } from '@/user/entities/user.entity';
 import {
   Column,
   Entity,
+  Index,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -12,6 +13,7 @@ import { Exclude } from 'class-transformer';
 import { BookSession } from '@/book-session/entities/book-session.entity';
 
 @Entity()
+@Index('IDX_BOOK_USER', ['user'])
 export class Book {
   @PrimaryGeneratedColumn()
   id: number;
@@ -70,8 +72,10 @@ export class Book {
   @ManyToOne(() => User, (user) => user.books, { onDelete: 'CASCADE' })
   user: User;
 
-  @Exclude()
-  @OneToMany(() => BookSession, (bookSession) => bookSession.book)
+  // @Exclude()
+  @OneToMany(() => BookSession, (bookSession) => bookSession.book, {
+    eager: true,
+  })
   bookSessions: BookSession[];
 
   constructor(payload?: CreateBookDto) {

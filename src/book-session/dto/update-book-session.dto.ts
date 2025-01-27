@@ -1,4 +1,8 @@
-import { PartialType } from '@nestjs/swagger';
-import { CreateBookSessionDto } from './create-book-session.dto';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsNumber } from 'class-validator';
 
-export class UpdateBookSessionDto extends PartialType(CreateBookSessionDto) {}
+export class UpdateBookSessionDto {
+  @ApiProperty()
+  @IsNumber()
+  currentPage: number;
+}

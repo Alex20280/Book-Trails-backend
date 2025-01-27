@@ -44,17 +44,17 @@ export class CreateBookDto {
   @IsString()
   description?: string;
 
-  @ApiProperty({ example: BookStatus.ToRead })
+  @ApiProperty({ enum: BookStatus, example: BookStatus.ToRead })
   @IsNotEmpty()
   @IsEnum(BookStatus)
   status: BookStatus;
 
-  @ApiProperty({ example: BookType.Soft })
+  @ApiProperty({ enum: BookType, example: BookType.Soft })
   @IsNotEmpty()
   @IsEnum(BookType)
   type: BookType;
 
-  @ApiPropertyOptional({ example: Source.Purchased })
+  @ApiPropertyOptional({ enum: Source, example: Source.Purchased })
   @IsEnum(Source)
   @IsOptional()
   source?: Source | null | undefined;
