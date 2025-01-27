@@ -4,12 +4,15 @@ import { Exclude } from 'class-transformer';
 import {
   Column,
   Entity,
+  Index,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { CreateBookSessionDto } from '../dto/create-book-session.dto';
 
 @Entity()
+@Index('IDX_BOOKSESSION_BOOK', ['book'])
 export class BookSession {
   @PrimaryGeneratedColumn()
   id: number;
@@ -17,10 +20,10 @@ export class BookSession {
   @Column()
   startDate: Date;
 
-  @Column()
+  @Column({ nullable: true, default: null })
   endDate: Date;
 
-  @Column()
+  @Column({ nullable: true, default: null })
   currentPage: number;
 
   @Column()
@@ -33,4 +36,12 @@ export class BookSession {
   @Exclude()
   @OneToMany(() => Pause, (pause) => pause.bookSession)
   pauses: Pause[];
+
+  constructor(payload: CreateBookSessionDto) {
+    if (!payload) return;
+
+    if (payload instanceof CreateBookSessionDto) {
+      this.readingPlace = payload.readingPlace;
+    }
+  }
 }

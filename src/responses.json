@@ -36,5 +36,24 @@
 
   "changeEmail": {
     "message": "A confirmation code has been sent to your new email address."
-  }
+  },
+
+  "bookSession": {
+    "readingPlace": "home",
+    "startDate": "2025-01-27T11:46:00.667Z",
+    "endDate": null,
+    "currentPage": null,
+    "id": 2
+  },
+
+  "sessionPause": {
+    "startDate": "2025-01-27T13:57:31.730Z",
+    "endDate": null,
+    "id": 3
+  },
+
+  "updatedBookSession": {
+    "message": "The book session has been successfully completed"
+  },
+  "updatedSessionPause": { "message": "The book session continues" }
 }
