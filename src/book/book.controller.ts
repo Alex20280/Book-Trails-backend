@@ -7,6 +7,8 @@ import {
   UploadedFile,
   UseInterceptors,
   UseGuards,
+  Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { BookService } from './book.service';
 import { CreateBookDto } from './dto/create-book.dto';
@@ -14,6 +16,7 @@ import {
   ApiBearerAuth,
   ApiConsumes,
   ApiOperation,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { CustomParseFilePipe } from '@/common/pipes/image.pipe';
@@ -47,10 +50,16 @@ export class BookController {
   @ApiOperation({
     summary: 'return user`s books',
   })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 5 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 5 })
   @Get()
-  async findAll(@UserDecorator('id') userId: number) {
+  async findAll(
+    @UserDecorator('id') userId: number,
+    @Query('page', new ParseIntPipe()) page = 1, // сторінка, за замовчуванням 1
+    @Query('limit', new ParseIntPipe()) limit = 10,
+  ) {
     // : Promise<Book[]>
-    return this.bookService.findAll(userId);
+    return this.bookService.findAll(userId, page, limit);
   }
 
   @Get(':id')

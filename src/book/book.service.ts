@@ -5,6 +5,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Book } from './entities/book.entity';
 import { CloudinaryService } from '@/cloudinary/cloudinary.service';
+import { BookStatus } from '@/common/enums/book.enum';
+import { BookSession } from '@/book-session/entities/book-session.entity';
 
 @Injectable()
 export class BookService {
@@ -34,7 +36,10 @@ export class BookService {
     return await this.bookRepository.save(newBook);
   }
 
-  async findAll(userId: number) {
+  async findAll(userId: number, page: number, limit: number) {
+    console.log('object :>> ', page);
+    console.log('object :>> ', limit);
+
     // : Promise<Book[]>
     const result = await this.bookRepository
       .createQueryBuilder('book')
@@ -49,23 +54,59 @@ export class BookService {
       .leftJoinAndSelect('book.bookSessions', 'bookSession')
       .leftJoin('book.user', 'user')
       .where('user.id = :userId', { userId })
+      .skip((page - 1) * limit)
+      .take(limit)
       .getMany();
 
-    const totalReadingTime = result[0]?.bookSessions?.reduce(
-      (total, session) => {
-        if (session.startDate && session.endDate) {
+    const response = await this.getManyResponse(result);
+    return response;
+  }
+
+  private async getManyResponse(books: Book[]) {
+    const response = books.map((book) => {
+      const { id, title, image, author, status, pages } = book;
+      const totalReadingTime = book.bookSessions?.reduce((total, session) => {
+        if (
+          session.startDate &&
+          session.endDate &&
+          book.status === BookStatus.Read
+        ) {
           const start = new Date(session.startDate).getTime();
           const end = new Date(session.endDate).getTime();
           return total + (end - start);
         }
         return total;
-      },
-      0,
-    );
+      }, 0);
 
-    console.log('totalReadingTime :>> ', totalReadingTime);
+      let readPercetage: number | undefined;
 
-    return result;
+      if (book.status !== BookStatus.ToRead) {
+        const readPages = book.bookSessions?.length
+          ? book.bookSessions.reduce(
+              (max: number, session: BookSession) =>
+                session.currentPage > max ? session.currentPage : max,
+              0,
+            )
+          : 0;
+
+        const readPerc = parseFloat((readPages / book.pages).toFixed(2)) * 100;
+
+        readPercetage = readPerc;
+      }
+
+      return {
+        id,
+        title,
+        image,
+        author,
+        status,
+        pages,
+        ...(totalReadingTime !== 0 && { totalReadingTime }),
+        ...(readPercetage !== 0 && { readPercetage }),
+      };
+    });
+
+    return response;
   }
 
   findOne(id: number) {
