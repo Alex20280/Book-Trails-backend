@@ -1,11 +1,11 @@
 import {
+  BeforeInsert,
+  BeforeUpdate,
   Column,
-  CreateDateColumn,
   Entity,
   JoinColumn,
   OneToMany,
   PrimaryGeneratedColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { Exclude } from 'class-transformer';
@@ -61,16 +61,23 @@ export class User {
   resetPasswordCode: string;
 
   @Exclude()
-  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  createdAt: Date;
+  @Column()
+  createdAt: string;
 
   @Exclude()
-  @UpdateDateColumn({
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
-  })
-  updatedAt: Date;
+  @Column()
+  updatedAt: string;
+
+  @BeforeInsert()
+  setCreatedAt(): void {
+    this.createdAt = new Date().toISOString();
+    this.updatedAt = new Date().toISOString();
+  }
+
+  @BeforeUpdate()
+  setUpdatedAt(): void {
+    this.updatedAt = new Date().toISOString();
+  }
 
   @OneToMany(() => Session, (session) => session.user, { eager: true })
   @JoinColumn({ name: 'userId' })

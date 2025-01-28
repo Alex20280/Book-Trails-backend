@@ -3,16 +3,13 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
-  Delete,
   UploadedFile,
   UseInterceptors,
   UseGuards,
 } from '@nestjs/common';
 import { BookService } from './book.service';
 import { CreateBookDto } from './dto/create-book.dto';
-import { UpdateBookDto } from './dto/update-book.dto';
 import {
   ApiBearerAuth,
   ApiConsumes,
@@ -51,22 +48,13 @@ export class BookController {
     summary: 'return user`s books',
   })
   @Get()
-  async findAll(@UserDecorator('id') userId: number): Promise<Book[]> {
+  async findAll(@UserDecorator('id') userId: number) {
+    // : Promise<Book[]>
     return this.bookService.findAll(userId);
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.bookService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateBookDto: UpdateBookDto) {
-    return this.bookService.update(+id, updateBookDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.bookService.remove(+id);
   }
 }

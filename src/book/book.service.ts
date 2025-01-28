@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { CreateBookDto } from './dto/create-book.dto';
-import { UpdateBookDto } from './dto/update-book.dto';
 import { User } from '@/user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -35,19 +34,41 @@ export class BookService {
     return await this.bookRepository.save(newBook);
   }
 
-  async findAll(userId: number): Promise<Book[]> {
-    return await this.bookRepository.find({ where: { user: { id: userId } } });
+  async findAll(userId: number) {
+    // : Promise<Book[]>
+    const result = await this.bookRepository
+      .createQueryBuilder('book')
+      .select([
+        'book.id',
+        'book.title',
+        'book.image',
+        'book.author',
+        'book.status',
+        'book.pages',
+      ])
+      .leftJoinAndSelect('book.bookSessions', 'bookSession')
+      .leftJoin('book.user', 'user')
+      .where('user.id = :userId', { userId })
+      .getMany();
+
+    const totalReadingTime = result[0]?.bookSessions?.reduce(
+      (total, session) => {
+        if (session.startDate && session.endDate) {
+          const start = new Date(session.startDate).getTime();
+          const end = new Date(session.endDate).getTime();
+          return total + (end - start);
+        }
+        return total;
+      },
+      0,
+    );
+
+    console.log('totalReadingTime :>> ', totalReadingTime);
+
+    return result;
   }
 
   findOne(id: number) {
     return `This action returns a #${id} book`;
-  }
-
-  update(id: number, updateBookDto: UpdateBookDto) {
-    return `This action updates a #${id} book`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} book`;
   }
 }

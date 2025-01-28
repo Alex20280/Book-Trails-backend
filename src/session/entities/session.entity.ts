@@ -1,7 +1,8 @@
 import { User } from '@/user/entities/user.entity';
 import { Exclude } from 'class-transformer';
 import {
-  CreateDateColumn,
+  BeforeInsert,
+  Column,
   Entity,
   JoinColumn,
   ManyToOne,
@@ -14,8 +15,13 @@ export class Session {
   id: number;
 
   @Exclude()
-  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
-  createdAt: Date;
+  @Column()
+  createdAt: string;
+
+  @BeforeInsert()
+  setCreatedAt(): void {
+    this.createdAt = new Date().toISOString();
+  }
 
   @ManyToOne(() => User, (user) => user.sessions, {
     onDelete: 'CASCADE',

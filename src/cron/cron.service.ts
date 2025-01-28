@@ -21,14 +21,14 @@ export class CronService {
     const now = new Date();
     now.setHours(now.getHours() - EXPIRATION_HOURS);
 
-    const twoHoursAgo = now.toISOString();
+    const fourHoursAgo = now.toISOString();
 
     try {
       const result = await this.sessionRepository
         .createQueryBuilder()
         .delete()
         .from(Session)
-        .where('createdAt < :twoHoursAgo', { twoHoursAgo })
+        .where('createdAt < :twoHoursAgo', { fourHoursAgo })
         .execute();
 
       if (result.affected) {
