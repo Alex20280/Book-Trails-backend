@@ -3,20 +3,20 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
-  Delete,
   UploadedFile,
   UseInterceptors,
   UseGuards,
+  Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { BookService } from './book.service';
 import { CreateBookDto } from './dto/create-book.dto';
-import { UpdateBookDto } from './dto/update-book.dto';
 import {
   ApiBearerAuth,
   ApiConsumes,
   ApiOperation,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { CustomParseFilePipe } from '@/common/pipes/image.pipe';
@@ -24,6 +24,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '@/auth/guards/jwt.auth.guard';
 import { UserDecorator } from '@/common/decorators/user.decorator';
 import { Book } from './entities/book.entity';
+import { BookResponse } from '@/common/interfaces/book.interfces';
 
 @ApiTags('Book')
 @UseGuards(JwtAuthGuard)
@@ -50,23 +51,19 @@ export class BookController {
   @ApiOperation({
     summary: 'return user`s books',
   })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 5 })
+  @ApiQuery({ name: 'limit', required: false, type: Number, example: 5 })
   @Get()
-  async findAll(@UserDecorator('id') userId: number): Promise<Book[]> {
-    return this.bookService.findAll(userId);
+  async findAll(
+    @UserDecorator('id') userId: number,
+    @Query('page', new ParseIntPipe()) page = 1,
+    @Query('limit', new ParseIntPipe()) limit = 10,
+  ): Promise<BookResponse[]> {
+    return this.bookService.findAll(userId, page, limit);
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.bookService.findOne(+id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateBookDto: UpdateBookDto) {
-    return this.bookService.update(+id, updateBookDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.bookService.remove(+id);
   }
 }

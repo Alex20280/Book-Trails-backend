@@ -21,7 +21,7 @@ import { User } from '@/user/entities/user.entity';
 import { setRefreshTokenCookie } from '@/common/helpers/cookie.setter';
 import { ApiCustomResponse } from '@/common/helpers/api-custom-response';
 import * as responses from '../responses.json';
-import { LoginCResponse, Tokens } from '@/common/interfaces';
+import { CLoginResponse, Tokens } from '@/common/interfaces';
 import { CreateUserDto } from '@/user/dto/create-user.dto';
 import { LoginUserDto } from '@/user/dto/login-user.dto';
 import { ForgetPasswordDto } from '@/auth/dto/forget-password.dto';
@@ -78,7 +78,7 @@ export class AuthController {
   async login(
     @UserDecorator() user: User,
     @Res({ passthrough: true }) response: Response,
-  ): Promise<LoginCResponse> {
+  ): Promise<CLoginResponse> {
     const { loggedInUser, accessToken, refreshToken } =
       await this.authService.login(user);
 
@@ -105,7 +105,7 @@ export class AuthController {
   async setNewPassword(
     @Body() payload: SetNewPasswordDto,
     @Res({ passthrough: true }) response: Response,
-  ): Promise<LoginCResponse> {
+  ): Promise<CLoginResponse> {
     const { loggedInUser, accessToken, refreshToken } =
       await this.authService.setNewPassword(payload);
 

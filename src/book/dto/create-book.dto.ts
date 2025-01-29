@@ -37,6 +37,7 @@ export class CreateBookDto {
   language: string;
 
   @ApiPropertyOptional()
+  @IsOptional()
   @IsString()
   editor?: string;
 

@@ -12,6 +12,7 @@ import {
   CreateBookSession,
   UpdateBookSession,
 } from '@/common/interfaces/book.session.service.interfaces';
+import { BookStatus } from '@/common/enums/book.enum';
 
 @Injectable()
 export class BookSessionService {
@@ -37,9 +38,13 @@ export class BookSessionService {
         throw new ConflictException('Some reading session is not finished!');
       }
 
+      await this.bookRepository.update(
+        { id: book.id },
+        { status: BookStatus.Reading },
+      );
+
       const newBookSession = new BookSession(createDto);
 
-      newBookSession.startDate = new Date();
       newBookSession.book = book;
 
       return await this.bookSessionRepository.save(newBookSession);
@@ -68,9 +73,22 @@ export class BookSessionService {
         throw new BadRequestException('Book session is finished!');
       }
 
+      const book = await this.bookRepository.findOneOrFail({
+        where: { id: bookId },
+        select: ['id', 'pages'],
+      });
+
+      const bookPages = book.pages;
+
+      if (currentPage === bookPages) {
+        await this.bookRepository.update(
+          { id: book.id },
+          { status: BookStatus.Read, isLegacy: true },
+        );
+      }
+
       const updatedBookSession = this.bookSessionRepository.merge(bookSession, {
         currentPage,
-        endDate: new Date(),
       });
 
       await this.bookSessionRepository.save(updatedBookSession);

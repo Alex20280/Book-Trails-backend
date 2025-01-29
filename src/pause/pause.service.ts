@@ -30,7 +30,7 @@ export class PauseService {
 
     const newPause = new Pause();
 
-    newPause.startDate = new Date();
+    newPause.startDate = new Date().toISOString();
     newPause.bookSession = bookSession;
 
     return await this.pauseRepository.save(newPause);
@@ -48,7 +48,7 @@ export class PauseService {
     });
 
     const updatedPause = this.pauseRepository.merge(pause, {
-      endDate: new Date(),
+      endDate: new Date().toISOString(),
     });
 
     await this.pauseRepository.save(updatedPause);

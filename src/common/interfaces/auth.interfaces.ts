@@ -1,11 +1,16 @@
 import { User } from '@/user/entities/user.entity';
 
+export interface CLoginResponse {
+  loggedInUser: User;
+  accessToken: string;
+}
+
 export interface Tokens {
   accessToken: string;
   refreshToken: string;
 }
 
-export interface LoginSResponse {
+export interface SLoginResponse {
   loggedInUser: User;
   accessToken: string;
   refreshToken: string;

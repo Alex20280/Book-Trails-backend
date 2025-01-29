@@ -2,6 +2,8 @@ import { Book } from '@/book/entities/book.entity';
 import { Pause } from '@/pause/entities/pause.entity';
 import { Exclude } from 'class-transformer';
 import {
+  BeforeInsert,
+  BeforeUpdate,
   Column,
   Entity,
   Index,
@@ -18,10 +20,20 @@ export class BookSession {
   id: number;
 
   @Column()
-  startDate: Date;
+  startDate: string;
 
   @Column({ nullable: true, default: null })
-  endDate: Date;
+  endDate: string;
+
+  @BeforeInsert()
+  setCreatedAt(): void {
+    this.startDate = new Date().toISOString();
+  }
+
+  @BeforeUpdate()
+  setUpdatedAt(): void {
+    this.endDate = new Date().toISOString();
+  }
 
   @Column({ nullable: true, default: null })
   currentPage: number;

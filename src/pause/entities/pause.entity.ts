@@ -1,6 +1,8 @@
 import { BookSession } from '@/book-session/entities/book-session.entity';
 import { Exclude } from 'class-transformer';
 import {
+  BeforeInsert,
+  BeforeUpdate,
   Column,
   Entity,
   Index,
@@ -15,10 +17,20 @@ export class Pause {
   id: number;
 
   @Column()
-  startDate: Date;
+  startDate: string;
 
   @Column({ nullable: true, default: null })
-  endDate: Date;
+  endDate: string;
+
+  @BeforeInsert()
+  setCreatedAt(): void {
+    this.startDate = new Date().toISOString();
+  }
+
+  @BeforeUpdate()
+  setUpdatedAt(): void {
+    this.endDate = new Date().toISOString();
+  }
 
   @Exclude()
   @ManyToOne(() => BookSession, (bookSession) => bookSession.pauses, {

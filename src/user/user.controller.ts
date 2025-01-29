@@ -25,13 +25,13 @@ import * as responses from '../responses.json';
 import { ApiCustomResponse } from '@/common/helpers/api-custom-response';
 import { CreateNewPasswordDto } from '@/auth/dto/create-new-password.dto';
 import { setRefreshTokenCookie } from '@/common/helpers/cookie.setter';
-import { LoginCResponse } from '@/common/interfaces';
 import { AuthService } from '@/auth/auth.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CustomParseFilePipe } from '@/common/pipes/image.pipe';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UpdateEmailDto } from './dto/update-email.dto';
 import { DeleteAccountDto } from './dto/delete-account.dto';
+import { CLoginResponse } from '@/common/interfaces';
 
 @ApiTags('User')
 @UseGuards(JwtAuthGuard)
@@ -79,7 +79,7 @@ export class UserController {
   async changePassword(
     @Body() payload: CreateNewPasswordDto,
     @Res({ passthrough: true }) response: Response,
-  ): Promise<LoginCResponse> {
+  ): Promise<CLoginResponse> {
     const { loggedInUser, accessToken, refreshToken } =
       await this.authService.setNewPassword(payload);
 

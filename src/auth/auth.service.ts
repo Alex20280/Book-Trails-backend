@@ -1,4 +1,4 @@
-import { InTokensGenerate, LoginSResponse, Tokens } from '@/common/interfaces';
+import { InTokensGenerate, SLoginResponse, Tokens } from '@/common/interfaces';
 import { User } from '@/user/entities/user.entity';
 import {
   BadRequestException,
@@ -83,7 +83,7 @@ export class AuthService {
     }
   }
 
-  async login(user: User): Promise<LoginSResponse> {
+  async login(user: User): Promise<SLoginResponse> {
     user.isLoggedIn = true;
 
     const newSession = new Session();
@@ -208,7 +208,7 @@ export class AuthService {
 
   async setNewPassword(
     payload: SetNewPasswordDto | CreateNewPasswordDto,
-  ): Promise<LoginSResponse> {
+  ): Promise<SLoginResponse> {
     try {
       let user: User;
       let password: string;
