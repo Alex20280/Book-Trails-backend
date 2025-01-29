@@ -41,8 +41,10 @@ export class BookService {
     userId: number,
     page: number,
     limit: number,
+    status?: BookStatus | null,
   ): Promise<BookResponse[]> {
-    const result = await this.bookRepository
+    console.log('status :>> ', status);
+    const query = this.bookRepository
       .createQueryBuilder('book')
       .select([
         'book.id',
@@ -55,7 +57,13 @@ export class BookService {
       ])
       .leftJoinAndSelect('book.bookSessions', 'bookSession')
       .leftJoin('book.user', 'user')
-      .where('user.id = :userId', { userId })
+      .where('user.id = :userId', { userId });
+
+    if (status) {
+      query.andWhere('book.status = :status', { status });
+    }
+
+    const result = await query
       .skip((page - 1) * limit)
       .take(limit)
       .getMany();

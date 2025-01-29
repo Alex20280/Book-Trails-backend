@@ -55,5 +55,62 @@
   "updatedBookSession": {
     "message": "The book session has been successfully completed"
   },
-  "updatedSessionPause": { "message": "The book session continues" }
+  "updatedSessionPause": { "message": "The book session continues" },
+
+  "createBook": {
+    "genre": "string",
+    "pages": 234,
+    "author": "string",
+    "editor": "string",
+    "status": "toRead",
+    "isLegacy": true,
+    "title": "string",
+    "language": "string",
+    "type": "soft",
+    "source": "purchased",
+    "description": "string",
+    "image": "https://...",
+    "userRating": null,
+    "id": 15
+  },
+
+  "bookList": [
+    {
+      "id": 11,
+      "title": "string",
+      "image": "",
+      "author": "string",
+      "status": "reading",
+      "pages": 234,
+      "readPercetage": 43
+    },
+    {
+      "id": 12,
+      "title": "string",
+      "image": null,
+      "author": "string",
+      "status": "reading",
+      "pages": 234,
+      "readPercetage": 64
+    },
+    {
+      "id": 14,
+      "title": "Hello",
+      "image": null,
+      "author": "string",
+      "status": "toRead",
+      "pages": 234
+    },
+    {
+      "id": 13,
+      "title": "Hello",
+      "image": null,
+      "author": "string",
+      "status": "read",
+      "pages": 234,
+      "userRating": 4,
+      "totalReadingTime": 39012,
+      "readPercetage": 100
+    }
+  ]
 }
