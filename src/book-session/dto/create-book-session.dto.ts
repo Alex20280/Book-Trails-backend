@@ -1,4 +1,4 @@
-import { ReadingPlace } from '@/common/enums/book-session.enum';
+import { ReadingPlace } from '@/common/enums/book.enum';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum } from 'class-validator';
 
