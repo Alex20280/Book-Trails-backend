@@ -71,13 +71,22 @@ export class BookController {
     @UserDecorator('id') userId: number,
     @Query('page', new ParseIntPipe()) page = 1,
     @Query('limit', new ParseIntPipe()) limit = 10,
+
     @Query('status') status: BookStatus,
   ): Promise<BookResponse[]> {
     return this.bookService.findAll(userId, page, limit, status);
   }
 
+  @ApiOperation({
+    summary: 'view one user`s book',
+  })
+  @ApiCustomResponse(HttpStatus.OK, responses.getOneBook)
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.bookService.findOne(+id);
+  async findOne(
+    @UserDecorator('id') userId: number,
+    @Param('id') id: number,
+    @Query('offset') offset: number,
+  ) {
+    return await this.bookService.findOne(userId, id, offset);
   }
 }

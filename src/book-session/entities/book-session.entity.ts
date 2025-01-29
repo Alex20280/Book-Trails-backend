@@ -45,8 +45,10 @@ export class BookSession {
   @ManyToOne(() => Book, (book) => book.bookSessions, { onDelete: 'CASCADE' })
   book: Book;
 
-  @Exclude()
-  @OneToMany(() => Pause, (pause) => pause.bookSession)
+  // @Exclude()
+  @OneToMany(() => Pause, (pause) => pause.bookSession, {
+    eager: true,
+  })
   pauses: Pause[];
 
   constructor(payload: CreateBookSessionDto) {
