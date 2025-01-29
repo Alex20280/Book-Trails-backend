@@ -28,7 +28,7 @@ export class CronService {
         .createQueryBuilder()
         .delete()
         .from(Session)
-        .where('createdAt < :twoHoursAgo', { fourHoursAgo })
+        .where('createdAt < :fourHoursAgo', { fourHoursAgo })
         .execute();
 
       if (result.affected) {

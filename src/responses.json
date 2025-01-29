@@ -112,5 +112,27 @@
       "totalReadingTime": 39012,
       "readPercetage": 100
     }
-  ]
+  ],
+  "getOneBook": {
+    "id": 12,
+    "title": "string",
+    "author": "string",
+    "pages": 234,
+    "genre": "string",
+    "language": "string",
+    "editor": "string",
+    "description": "string",
+    "status": "read",
+    "source": "purchased",
+    "type": "soft",
+    "isLegacy": true,
+    "image": null,
+    "userRating": null,
+    "startReadingDate": "2025-01-28T13:19:37.076Z",
+    "endReadingDate": "2025-01-29T19:05:34.249Z",
+    "readingPlaces": ["work", "home"],
+    "readingSessions": 3,
+    "readingTime": 2,
+    "sinceStart": 1
+  }
 }

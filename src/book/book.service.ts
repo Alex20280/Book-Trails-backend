@@ -71,6 +71,63 @@ export class BookService {
     return await this.getManyResponse(result);
   }
 
+  async findOne(userId: number, bookId: number, offset: number) {
+    const data = await this.bookRepository.findOneByOrFail({
+      id: bookId,
+      user: { id: userId },
+    });
+
+    const { bookSessions, ...bookDetails } = data;
+
+    let startReadingDate: string | undefined;
+    let endReadingDate: string | undefined;
+    let readingPlaces: string[] | undefined;
+    let readingSessions: number | undefined;
+    let readingTime: number | undefined;
+    let sinceStart: number | undefined;
+
+    if (data.status !== BookStatus.ToRead) {
+      const sessions = bookSessions;
+      readingSessions = sessions.length;
+
+      const [
+        calculatedReadingTime,
+        startReadingDateResult,
+        endReadingDateResult,
+        places,
+        calculatedSinceStart,
+      ] = await Promise.all([
+        this.calculateReadingTime(sessions),
+        this.findStartReadingDate(sessions),
+        data.status === BookStatus.Read
+          ? this.findEndReadingDate(sessions)
+          : undefined,
+        [...new Set(sessions.map((s) => s.readingPlace))],
+        this.calculateSinceStart(
+          await this.findStartReadingDate(sessions),
+          offset,
+        ),
+      ]);
+
+      readingTime = calculatedReadingTime;
+      startReadingDate = startReadingDateResult;
+      endReadingDate = endReadingDateResult;
+      readingPlaces = places;
+      sinceStart = calculatedSinceStart;
+    }
+
+    const response = {
+      ...bookDetails,
+      startReadingDate,
+      endReadingDate,
+      readingPlaces,
+      readingSessions,
+      readingTime,
+      sinceStart,
+    };
+    return response;
+  }
+
   private async getManyResponse(books: Book[]): Promise<BookResponse[]> {
     const response = books.map((book) => {
       const { id, title, image, author, status, pages, userRating } = book;
@@ -119,7 +176,58 @@ export class BookService {
     return response;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} book`;
+  private async calculateReadingTime(sessions: BookSession[]) {
+    const { totalSessionTime, totalPauseTime } = sessions.reduce(
+      (acc, session) => {
+        const sessionStart = new Date(session.startDate).getTime();
+        const sessionEnd = new Date(session.endDate).getTime();
+
+        acc.totalSessionTime += sessionEnd - sessionStart;
+
+        session.pauses.forEach((pause) => {
+          const pauseStart = new Date(pause.startDate).getTime();
+          const pauseEnd = new Date(pause.endDate).getTime();
+          acc.totalPauseTime += pauseEnd - pauseStart;
+        });
+
+        return acc;
+      },
+      { totalSessionTime: 0, totalPauseTime: 0 },
+    );
+
+    return Math.round((totalSessionTime - totalPauseTime) / 60000);
+  }
+
+  private async adjustForUserTimezone(
+    dateStr: string,
+    offsetInMinutes: number,
+  ) {
+    const date = new Date(dateStr);
+    const adjustedDate = new Date(date.getTime() - offsetInMinutes * 60000);
+    return adjustedDate;
+  }
+
+  private async findStartReadingDate(bookSessions: BookSession[]) {
+    return bookSessions.sort(
+      (a, b) =>
+        new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
+    )[0]?.startDate;
+  }
+
+  private async findEndReadingDate(bookSessions: BookSession[]) {
+    return bookSessions.sort(
+      (a, b) => new Date(b.endDate).getTime() - new Date(a.endDate).getTime(),
+    )[0]?.endDate;
+  }
+
+  private async calculateSinceStart(startReadingDate: string, offset: number) {
+    const now = new Date().toISOString();
+    const userNowDate = await this.adjustForUserTimezone(now, offset);
+    const userStartDate = await this.adjustForUserTimezone(
+      startReadingDate,
+      offset,
+    );
+    const diffInMillis = userNowDate.getTime() - userStartDate.getTime();
+    return Math.floor(diffInMillis / (1000 * 3600 * 24));
   }
 }
