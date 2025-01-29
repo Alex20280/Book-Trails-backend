@@ -42,9 +42,6 @@ export class BookService {
     page: number,
     limit: number,
   ): Promise<BookResponse[]> {
-    console.log('object :>> ', page);
-    console.log('object :>> ', limit);
-
     const result = await this.bookRepository
       .createQueryBuilder('book')
       .select([
