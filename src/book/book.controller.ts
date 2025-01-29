@@ -24,6 +24,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '@/auth/guards/jwt.auth.guard';
 import { UserDecorator } from '@/common/decorators/user.decorator';
 import { Book } from './entities/book.entity';
+import { BookResponse } from '@/common/interfaces/book.interfces';
 
 @ApiTags('Book')
 @UseGuards(JwtAuthGuard)
@@ -55,10 +56,9 @@ export class BookController {
   @Get()
   async findAll(
     @UserDecorator('id') userId: number,
-    @Query('page', new ParseIntPipe()) page = 1, // сторінка, за замовчуванням 1
+    @Query('page', new ParseIntPipe()) page = 1,
     @Query('limit', new ParseIntPipe()) limit = 10,
-  ) {
-    // : Promise<Book[]>
+  ): Promise<BookResponse[]> {
     return this.bookService.findAll(userId, page, limit);
   }
 

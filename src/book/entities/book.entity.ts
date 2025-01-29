@@ -68,6 +68,9 @@ export class Book {
   @Column({ nullable: true })
   image: string;
 
+  @Column({ nullable: true, default: null })
+  userRating: number;
+
   @Exclude()
   @ManyToOne(() => User, (user) => user.books, { onDelete: 'CASCADE' })
   user: User;

@@ -7,6 +7,7 @@ import { Book } from './entities/book.entity';
 import { CloudinaryService } from '@/cloudinary/cloudinary.service';
 import { BookStatus } from '@/common/enums/book.enum';
 import { BookSession } from '@/book-session/entities/book-session.entity';
+import { BookResponse } from '@/common/interfaces/book.interfces';
 
 @Injectable()
 export class BookService {
@@ -36,11 +37,14 @@ export class BookService {
     return await this.bookRepository.save(newBook);
   }
 
-  async findAll(userId: number, page: number, limit: number) {
+  async findAll(
+    userId: number,
+    page: number,
+    limit: number,
+  ): Promise<BookResponse[]> {
     console.log('object :>> ', page);
     console.log('object :>> ', limit);
 
-    // : Promise<Book[]>
     const result = await this.bookRepository
       .createQueryBuilder('book')
       .select([
@@ -50,6 +54,7 @@ export class BookService {
         'book.author',
         'book.status',
         'book.pages',
+        'book.userRating',
       ])
       .leftJoinAndSelect('book.bookSessions', 'bookSession')
       .leftJoin('book.user', 'user')
@@ -58,13 +63,12 @@ export class BookService {
       .take(limit)
       .getMany();
 
-    const response = await this.getManyResponse(result);
-    return response;
+    return await this.getManyResponse(result);
   }
 
-  private async getManyResponse(books: Book[]) {
+  private async getManyResponse(books: Book[]): Promise<BookResponse[]> {
     const response = books.map((book) => {
-      const { id, title, image, author, status, pages } = book;
+      const { id, title, image, author, status, pages, userRating } = book;
       const totalReadingTime = book.bookSessions?.reduce((total, session) => {
         if (
           session.startDate &&
@@ -101,6 +105,7 @@ export class BookService {
         author,
         status,
         pages,
+        ...(userRating && { userRating }),
         ...(totalReadingTime !== 0 && { totalReadingTime }),
         ...(readPercetage !== 0 && { readPercetage }),
       };
