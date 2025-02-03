@@ -11,6 +11,7 @@ import {
 import { CreateBookDto } from '../dto/create-book.dto';
 import { Exclude } from 'class-transformer';
 import { BookSession } from '@/book-session/entities/book-session.entity';
+import { Review } from '@/review/entities/review.entity';
 
 @Entity()
 @Index('IDX_BOOK_USER', ['user'])
@@ -80,6 +81,9 @@ export class Book {
     eager: true,
   })
   bookSessions: BookSession[];
+
+  @OneToMany(() => Review, (review) => review.book, { eager: true })
+  reviews: Review[];
 
   constructor(payload?: CreateBookDto) {
     if (!payload) return;
