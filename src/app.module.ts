@@ -15,6 +15,7 @@ import { AppLoggerMiddleware } from './common/middlewares/app-logger';
 import { BookModule } from './book/book.module';
 import { BookSessionModule } from './book-session/book-session.module';
 import { PauseModule } from './pause/pause.module';
+import { ReviewModule } from './review/review.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { PauseModule } from './pause/pause.module';
     BookModule,
     BookSessionModule,
     PauseModule,
+    ReviewModule,
   ],
   controllers: [AppController],
   providers: [

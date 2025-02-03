@@ -5,14 +5,16 @@ import {
 } from '@nestjs/common';
 
 import { BookSession } from './entities/book-session.entity';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Book } from '@/book/entities/book.entity';
 import {
   CreateBookSession,
+  FinishBook,
   UpdateBookSession,
 } from '@/common/interfaces/book.session.service.interfaces';
 import { BookStatus } from '@/common/enums/book.enum';
+import { ReviewService } from '../review/review.service';
 
 @Injectable()
 export class BookSessionService {
@@ -21,6 +23,8 @@ export class BookSessionService {
     readonly bookSessionRepository: Repository<BookSession>,
     @InjectRepository(Book)
     readonly bookRepository: Repository<Book>,
+    readonly reviewService: ReviewService,
+    readonly dataSource: DataSource,
   ) {}
 
   async create(payload: CreateBookSession): Promise<BookSession> {
@@ -62,21 +66,22 @@ export class BookSessionService {
     } = payload;
 
     try {
-      const bookSession = await this.bookSessionRepository.findOneOrFail({
-        where: {
-          id: bookSessionId,
-          book: { id: bookId, user: { id: userId } },
-        },
-      });
+      const [book, bookSession] = await Promise.all([
+        this.bookRepository.findOneOrFail({
+          where: { id: bookId },
+          select: ['id', 'pages'],
+        }),
+        this.bookSessionRepository.findOneOrFail({
+          where: {
+            id: bookSessionId,
+            book: { id: bookId, user: { id: userId } },
+          },
+        }),
+      ]);
 
       if (bookSession.endDate) {
         throw new BadRequestException('Book session is finished!');
       }
-
-      const book = await this.bookRepository.findOneOrFail({
-        where: { id: bookId },
-        select: ['id', 'pages'],
-      });
 
       const bookPages = book.pages;
 
@@ -87,15 +92,69 @@ export class BookSessionService {
         );
       }
 
-      const updatedBookSession = this.bookSessionRepository.merge(bookSession, {
-        currentPage,
-      });
-
-      await this.bookSessionRepository.save(updatedBookSession);
+      await this.bookSessionRepository.save(
+        this.bookSessionRepository.merge(bookSession, {
+          currentPage,
+        }),
+      );
 
       return { message: 'The book session has been successfully completed' };
     } catch (error) {
       throw error;
+    }
+  }
+
+  async finishTheBook(payload: FinishBook) {
+    const {
+      userId,
+      bookId,
+      bookSessionId,
+      finishDto: { currentPage, stars, review } = {},
+    } = payload;
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const manager = queryRunner.manager;
+
+      const [book, bookSession, newReview] = await Promise.all([
+        manager.findOneOrFail(Book, {
+          where: { id: bookId },
+          select: ['id', 'pages'],
+        }),
+        manager.findOneOrFail(BookSession, {
+          where: {
+            id: bookSessionId,
+            book: { id: bookId, user: { id: userId } },
+          },
+        }),
+        review ? this.reviewService.create({ text: review }, manager) : null,
+      ]);
+
+      bookSession.currentPage = currentPage;
+
+      book.userRating = stars;
+      book.status = BookStatus.Read;
+
+      if (newReview) {
+        book.reviews.push(newReview);
+      }
+
+      await Promise.all([
+        manager.save(BookSession, bookSession),
+        manager.save(Book, book),
+      ]);
+
+      await queryRunner.commitTransaction();
+
+      return book;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
   }
 }

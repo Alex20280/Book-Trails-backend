@@ -17,6 +17,7 @@ import { BookSession } from './entities/book-session.entity';
 
 import * as responses from '../responses.json';
 import { ApiCustomResponse } from '@/common/helpers/api-custom-response';
+import { FinishBookDto } from './dto/finish-book.dto';
 
 @ApiTags('BookSession')
 @UseGuards(JwtAuthGuard)
@@ -54,6 +55,24 @@ export class BookSessionController {
       bookId,
       bookSessionId,
       updateDto,
+    });
+  }
+  @Patch('finish-the-book/:bookId/:bookSessionId')
+  @ApiOperation({
+    summary: 'finished the book',
+  })
+  // @ApiCustomResponse(HttpStatus.OK, responses.updatedBookSession)
+  async finishTheBook(
+    @UserDecorator('id') userId: number,
+    @Param('bookId') bookId: number,
+    @Param('bookSessionId') bookSessionId: number,
+    @Body() finishDto: FinishBookDto,
+  ) {
+    return await this.bookSessionService.finishTheBook({
+      userId,
+      bookId,
+      bookSessionId,
+      finishDto,
     });
   }
 }
