@@ -134,5 +134,6 @@
     "readingSessions": 3,
     "readingTime": 2,
     "sinceStart": 1
-  }
+  },
+  "deleteBook": { "message": "book successfully deleted" }
 }
