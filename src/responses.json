@@ -128,6 +128,12 @@
     "isLegacy": true,
     "image": null,
     "userRating": null,
+    "reviews": [
+      {
+        "id": 6,
+        "text": "string"
+      }
+    ],
     "startReadingDate": "2025-01-28T13:19:37.076Z",
     "endReadingDate": "2025-01-29T19:05:34.249Z",
     "readingPlaces": ["work", "home"],
