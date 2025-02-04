@@ -10,6 +10,7 @@ import {
   Query,
   ParseIntPipe,
   HttpStatus,
+  Delete,
 } from '@nestjs/common';
 import { BookService } from './book.service';
 import { CreateBookDto } from './dto/create-book.dto';
@@ -71,7 +72,6 @@ export class BookController {
     @UserDecorator('id') userId: number,
     @Query('page', new ParseIntPipe()) page = 1,
     @Query('limit', new ParseIntPipe()) limit = 10,
-
     @Query('status') status: BookStatus,
   ): Promise<BookResponse[]> {
     return this.bookService.findAll(userId, page, limit, status);
@@ -88,5 +88,17 @@ export class BookController {
     @Query('offset') offset: number,
   ) {
     return await this.bookService.findOne(userId, id, offset);
+  }
+
+  @ApiOperation({
+    summary: 'delete book',
+  })
+  @ApiCustomResponse(HttpStatus.OK, responses.deleteBook)
+  @Delete(':id')
+  async delete(
+    @UserDecorator('id') userId: number,
+    @Param('id') id: number,
+  ): Promise<{ message: string }> {
+    return await this.bookService.delete(userId, id);
   }
 }

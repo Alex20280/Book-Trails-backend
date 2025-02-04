@@ -128,6 +128,17 @@ export class BookService {
     return response;
   }
 
+  async delete(userId: number, bookId: number): Promise<{ message: string }> {
+    const book = await this.bookRepository.findOneByOrFail({
+      id: bookId,
+      user: { id: userId },
+    });
+
+    await this.bookRepository.remove(book);
+
+    return { message: 'book successfully deleted' };
+  }
+
   private async getManyResponse(books: Book[]): Promise<BookResponse[]> {
     const response = books.map((book) => {
       const { id, title, image, author, status, pages, userRating } = book;
