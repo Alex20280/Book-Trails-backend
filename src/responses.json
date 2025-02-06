@@ -141,5 +141,5 @@
     "readingTime": 2,
     "sinceStart": 1
   },
-  "deleteBook": { "message": "book successfully deleted" }
+  "message": { "message": "string" }
 }

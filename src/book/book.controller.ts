@@ -93,7 +93,7 @@ export class BookController {
   @ApiOperation({
     summary: 'delete book',
   })
-  @ApiCustomResponse(HttpStatus.OK, responses.deleteBook)
+  @ApiCustomResponse(HttpStatus.OK, responses.message)
   @Delete(':id')
   async delete(
     @UserDecorator('id') userId: number,

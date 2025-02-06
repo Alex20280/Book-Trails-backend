@@ -49,4 +49,39 @@ export class EmailService {
       }
     });
   }
+
+  async supportEmail(userEmail: string, message: string) {
+    const supportEmail = this.configService.get<string>('SUPPORT_EMAIL');
+    const subject = 'user request';
+
+    const html = `
+    <div style="font-family: Arial, sans-serif; padding: 20px;">
+      <h2 style="color: #333;">Нове повідомлення від користувача</h2>
+      <div style="margin: 20px 0;">
+        <p><strong>Email користувача:</strong> ${userEmail}</p>
+      </div>
+      <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px;">
+        <h3 style="color: #444;">Повідомлення:</h3>
+        <p style="white-space: pre-wrap;">${message}</p>
+      </div>
+    </div>
+  `;
+
+    const mailOptions = {
+      from: process.env.GOOGLE_EMAIL,
+      to: supportEmail,
+      subject,
+      html,
+    };
+
+    this.transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        this.logger.error(error);
+      } else {
+        this.logger.log(
+          `${subject} email sent to ${supportEmail}: ` + info.response,
+        );
+      }
+    });
+  }
 }
