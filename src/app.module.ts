@@ -16,6 +16,7 @@ import { BookModule } from './book/book.module';
 import { BookSessionModule } from './book-session/book-session.module';
 import { PauseModule } from './pause/pause.module';
 import { ReviewModule } from './review/review.module';
+import { SupportRequestModule } from './support-request/support-request.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { ReviewModule } from './review/review.module';
     BookSessionModule,
     PauseModule,
     ReviewModule,
+    SupportRequestModule,
   ],
   controllers: [AppController],
   providers: [
