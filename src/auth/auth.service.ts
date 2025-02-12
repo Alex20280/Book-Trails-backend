@@ -320,14 +320,18 @@ export class AuthService {
     let user = await this.userRepository.findOneBy({ email });
 
     if (!user) {
-      user = await this.userRepository.save({
-        email,
-        username,
-        image: picture,
-        password: null,
-        emailVerified: true,
-        googleToken: randomBytes(8).toString('hex'),
-      });
+      user = await this.userRepository.save(
+        await this.userRepository.save({
+          email,
+          name: username,
+          image: picture,
+          password: null,
+          isVerifyEmail: true,
+          googleToken: randomBytes(8).toString('hex'),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }),
+      );
     } else {
       user.googleToken = randomBytes(8).toString('hex');
       user = await this.userRepository.save(user);
