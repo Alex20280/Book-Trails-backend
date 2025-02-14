@@ -15,6 +15,8 @@ import { CreateBookSessionDto } from '../dto/create-book-session.dto';
 
 @Entity()
 @Index('IDX_BOOKSESSION_BOOK', ['book'])
+@Index('IDX_BOOKSESSION_STARTDATE', ['startDate'])
+@Index('IDX_BOOKSESSION_ENDDATE', ['endDate'])
 export class BookSession {
   @PrimaryGeneratedColumn()
   id: number;
