@@ -40,6 +40,19 @@ export class BookController {
   constructor(private readonly bookService: BookService) {}
 
   @ApiOperation({
+    summary: 'get read days statistics by month',
+  })
+  // @ApiCustomResponse(HttpStatus.OK, responses.message)
+  @Get('statistic')
+  async getReadDaysByMonth(
+    @UserDecorator('id') userId: number,
+    @Query('offset') offset: number,
+    @Query('year') year: number,
+  ) {
+    return await this.bookService.getBookStatistics(userId, offset, year);
+  }
+
+  @ApiOperation({
     summary: 'add new book',
   })
   @UseInterceptors(FileInterceptor('image'))
@@ -100,18 +113,5 @@ export class BookController {
     @Param('id') id: number,
   ): Promise<{ message: string }> {
     return await this.bookService.delete(userId, id);
-  }
-
-  @ApiOperation({
-    summary: 'get read days statistics by month',
-  })
-  // @ApiCustomResponse(HttpStatus.OK, responses.message)
-  @Get('statistic/read-days')
-  async getReadDaysByMonth(
-    @UserDecorator('id') userId: number,
-    @Query('offset') offset: number,
-    @Query('year') year: number,
-  ) {
-    return await this.bookService.getBooksAndReadDays(userId, offset, year);
   }
 }
