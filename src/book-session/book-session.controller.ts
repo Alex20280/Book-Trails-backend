@@ -6,11 +6,16 @@ import {
   Param,
   UseGuards,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { BookSessionService } from './book-session.service';
-import { CreateBookSessionDto } from './dto/create-book-session.dto';
 import { UpdateBookSessionDto } from './dto/update-book-session.dto';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/auth/guards/jwt.auth.guard';
 import { UserDecorator } from '@/common/decorators/user.decorator';
 import { BookSession } from './entities/book-session.entity';
@@ -18,6 +23,7 @@ import { BookSession } from './entities/book-session.entity';
 import * as responses from '../responses.json';
 import { ApiCustomResponse } from '@/common/helpers/api-custom-response';
 import { FinishBookDto } from './dto/finish-book.dto';
+import { ReadingPlace } from '@/common/enums/book.enum';
 
 @ApiTags('BookSession')
 @UseGuards(JwtAuthGuard)
@@ -30,13 +36,18 @@ export class BookSessionController {
   @ApiOperation({
     summary: 'start reading session',
   })
+  @ApiQuery({
+    name: 'readingPlace',
+    required: true,
+    enum: ReadingPlace,
+  })
   @ApiCustomResponse(HttpStatus.CREATED, responses.bookSession)
   async create(
     @UserDecorator('id') userId: number,
     @Param('bookId') bookId: number,
-    @Body() createDto: CreateBookSessionDto,
+    @Query('readingPlace') readingPlace: ReadingPlace,
   ): Promise<BookSession> {
-    return this.bookSessionService.create({ userId, bookId, createDto });
+    return this.bookSessionService.create({ userId, bookId, readingPlace });
   }
 
   @Patch(':bookId/:bookSessionId')

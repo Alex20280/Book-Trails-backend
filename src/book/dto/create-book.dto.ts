@@ -1,4 +1,9 @@
-import { BookStatus, BookType, Source } from '@/common/enums/book.enum';
+import {
+  BookStatus,
+  BookType,
+  Language,
+  Source,
+} from '@/common/enums/book.enum';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
@@ -31,10 +36,10 @@ export class CreateBookDto {
   @IsNotEmpty()
   genre: string;
 
-  @ApiProperty()
-  @IsString()
+  @ApiProperty({ enum: Language, example: Language.English })
+  @IsEnum(Language)
   @IsNotEmpty()
-  language: string;
+  language: Language;
 
   @ApiPropertyOptional()
   @IsOptional()

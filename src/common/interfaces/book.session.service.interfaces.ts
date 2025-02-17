@@ -1,10 +1,10 @@
-import { CreateBookSessionDto } from '@/book-session/dto/create-book-session.dto';
 import { FinishBookDto } from '@/book-session/dto/finish-book.dto';
 import { UpdateBookSessionDto } from '@/book-session/dto/update-book-session.dto';
+import { ReadingPlace } from '@/common/enums/book.enum';
 export interface CreateBookSession {
   userId: number;
   bookId: number;
-  createDto: CreateBookSessionDto;
+  readingPlace: ReadingPlace;
 }
 
 export interface IncomingParams {

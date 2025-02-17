@@ -13,27 +13,28 @@ export const getStartEndOfYear = (offset: number, year: number) => {
 
 export const createReadDaysResponse = (readDays: ReadDay[]) => {
   const monthDaysCount = readDays.reduce((acc, { readDay }) => {
-    const month = new Date(readDay).getMonth() + 1; // Отримуємо місяць (1-12) тому що місяці починаються з 0
+    const month = new Date(readDay).getMonth() + 1;
     if (!acc[month]) {
       acc[month] = 0;
     }
-    acc[month] += 1; // Підраховуємо кількість днів для цього місяця
+    acc[month] += 1;
     return acc;
   }, {});
 
-  const response = Object.entries(monthDaysCount).map(([month, count]) => ({
-    [parseInt(month, 10)]: count,
-  }));
-
-  return response;
+  return monthDaysCount;
 };
 
 export const formatBooksPerMonth = (
   data: { readmonth: string; bookcount: string }[],
 ) => {
-  return data.map(({ readmonth, bookcount }) => ({
-    [parseInt(readmonth.split('-')[1])]: parseInt(bookcount),
-  }));
+  return data.reduce(
+    (acc, { readmonth, bookcount }) => {
+      const month = parseInt(readmonth.split('-')[1]);
+      acc[month] = parseInt(bookcount);
+      return acc;
+    },
+    {} as Record<number, number>,
+  );
 };
 
 export const getManyResponse = (books: Book[]) => {

@@ -18,6 +18,7 @@ import {
   findEndReadingDate,
   calculateSinceStart,
 } from '@/common/utils';
+import { SubscriptionType } from '@/common/enums/user.enum';
 
 @Injectable()
 export class BookService {
@@ -134,13 +135,14 @@ export class BookService {
     return { message: 'book successfully deleted' };
   }
 
-  async getBooksAndReadDays(userId: number, offset: number, year: number) {
+  async getBookStatistics(userId: number, offset: number, year: number) {
     const { startOfYearUserTime, endOfYearUserTime } = getStartEndOfYear(
       offset,
       year,
     );
 
-    const baseQuery = await this.baseQuery(
+    const booksPerMonthQuery = this.booksPerMonthQuery(userId, offset, year);
+    const readDaysQuery = this.readDaysQuery(
       userId,
       offset,
       year,
@@ -148,58 +150,81 @@ export class BookService {
       endOfYearUserTime,
     );
 
-    const booksPerMonthQuery = baseQuery
-      .select([
-        `TO_CHAR(session."startDate"::TIMESTAMP - INTERVAL '${offset} minutes', 'YYYY-MM') AS readMonth`,
-        `COUNT(DISTINCT book.id) AS bookCount`,
-      ])
-      .andWhere('book.status = :status', { status: BookStatus.Read })
-      .groupBy(
-        `TO_CHAR(session."startDate"::TIMESTAMP - INTERVAL '${offset} minutes', 'YYYY-MM')`,
-      )
-      .orderBy(
-        `TO_CHAR(session."startDate"::TIMESTAMP - INTERVAL '${offset} minutes', 'YYYY-MM')`,
-        'ASC',
-      );
-
     const booksPerMonth = await booksPerMonthQuery.getRawMany();
-
-    const readDaysQuery = baseQuery
-      .select(
-        `TO_CHAR(session."startDate"::TIMESTAMP - INTERVAL '${offset} minutes', 'YYYY-MM-DD')`,
-        'readDay',
-      )
-      .distinctOn([
-        `TO_CHAR(session."startDate"::TIMESTAMP - INTERVAL '${offset} minutes', 'YYYY-MM-DD')`,
-      ])
-      .groupBy(
-        `TO_CHAR(session."startDate"::TIMESTAMP - INTERVAL '${offset} minutes', 'YYYY-MM-DD'), session.startDate`,
-      )
-      .orderBy(
-        `TO_CHAR(session."startDate"::TIMESTAMP - INTERVAL '${offset} minutes', 'YYYY-MM-DD')`,
-        'ASC',
-      )
-      .addOrderBy('session."startDate"', 'ASC');
-
     const readDays = await readDaysQuery.getRawMany();
+    const bookTypes = await this.getBookType(userId, offset, year);
+
+    const subData = await this.userRepository
+      .createQueryBuilder('user')
+      .select(['user.id', 'user.subscriptionType'])
+      .where('user.id = :userId', { userId })
+      .getOneOrFail();
+
+    let readPlaces: Record<string, number> | undefined;
+    let readSources: Record<string, number> | undefined;
+    let readRating: Record<string, number> | undefined;
+    let readLanguage: Record<string, number> | undefined;
+
+    if (subData.subscriptionType === SubscriptionType.Premium) {
+      [readPlaces, readSources, readRating, readLanguage] = await Promise.all([
+        this.getReadPlaces(userId, offset, year),
+        this.getReadSource(userId, offset, year),
+        this.getReadRating(userId, offset, year),
+        this.getReadLanguage(userId, offset, year),
+      ]);
+    }
 
     return {
       booksPerMonth: formatBooksPerMonth(booksPerMonth),
       readDays: createReadDaysResponse(readDays),
+      bookTypes,
+      ...(readPlaces && { readPlaces }),
+      ...(readSources && { readSources }),
+      ...(readRating && { readRating }),
+      ...(readLanguage && { readLanguage }),
     };
   }
 
-  private async baseQuery(
+  private booksPerMonthQuery(userId: number, offset: number, year: number) {
+    const booksPerMonthQuery = this.bookRepository
+      .createQueryBuilder('book')
+      .innerJoin('book.user', 'user')
+      .select([
+        `TO_CHAR(book."endDate"::TIMESTAMP - INTERVAL '${offset} minutes', 'YYYY-MM') AS readMonth`,
+        `COUNT(book.id) AS bookCount`,
+      ])
+      .where('user.id = :userId', { userId })
+      .andWhere('book.endDate IS NOT NULL')
+      .andWhere(
+        `EXTRACT(YEAR FROM book."endDate"::TIMESTAMP - INTERVAL '${offset} minutes') = :year`,
+        { year },
+      )
+      .groupBy(
+        `TO_CHAR(book."endDate"::TIMESTAMP - INTERVAL '${offset} minutes', 'YYYY-MM')`,
+      )
+      .orderBy(
+        `TO_CHAR(book."endDate"::TIMESTAMP - INTERVAL '${offset} minutes', 'YYYY-MM')`,
+        'ASC',
+      );
+
+    return booksPerMonthQuery;
+  }
+
+  private readDaysQuery(
     userId: number,
     offset: number,
     year: number,
     startOfYearUserTime: Date,
     endOfYearUserTime: Date,
   ) {
-    const baseQuery = this.bookSessionRepository
+    const readDaysQuery = this.bookSessionRepository
       .createQueryBuilder('session')
       .innerJoin('session.book', 'book')
       .innerJoin('book.user', 'user')
+      .select(
+        `TO_CHAR(session."startDate"::TIMESTAMP - INTERVAL '${offset} minutes', 'YYYY-MM-DD')`,
+        'readDay',
+      )
       .where('user.id = :userId', { userId })
       .andWhere(
         `EXTRACT(YEAR FROM session."startDate"::TIMESTAMP - INTERVAL '${offset} minutes') = :year`,
@@ -214,8 +239,95 @@ export class BookService {
         endOfYearUserTime: new Date(
           endOfYearUserTime.getTime() - offset * 60000,
         ).toISOString(),
-      });
+      })
+      .distinctOn([
+        `TO_CHAR(session."startDate"::TIMESTAMP - INTERVAL '${offset} minutes', 'YYYY-MM-DD')`,
+      ])
+      .groupBy(
+        `TO_CHAR(session."startDate"::TIMESTAMP - INTERVAL '${offset} minutes', 'YYYY-MM-DD'), session.startDate`,
+      )
+      .orderBy(
+        `TO_CHAR(session."startDate"::TIMESTAMP - INTERVAL '${offset} minutes', 'YYYY-MM-DD')`,
+        'ASC',
+      )
+      .addOrderBy('session."startDate"', 'ASC');
 
-    return baseQuery;
+    return readDaysQuery;
+  }
+
+  private async getBookType(userId: number, offset: number, year: number) {
+    const result = await this.getFieldStats(userId, offset, year, 'type');
+    return result;
+  }
+
+  private async getReadPlaces(userId: number, offset: number, year: number) {
+    const data = await this.bookSessionRepository
+      .createQueryBuilder('session')
+      .innerJoin('session.book', 'book')
+      .innerJoin('book.user', 'user')
+      .select('session.readingPlace', 'place')
+      .addSelect('COUNT(session.readingPlace)', 'count')
+      .where('user.id = :userId', { userId })
+      .andWhere('book.status = :status', { status: BookStatus.Read })
+      .andWhere(
+        `EXTRACT(YEAR FROM book."endDate"::TIMESTAMP - INTERVAL '${offset} minutes') = :year`,
+        { year },
+      )
+      .groupBy('session.readingPlace')
+      .getRawMany();
+
+    const result = data.reduce(
+      (acc, { place, count }) => {
+        acc[place] = Number(count);
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    return result;
+  }
+
+  private async getReadSource(userId: number, offset: number, year: number) {
+    const result = await this.getFieldStats(userId, offset, year, 'source');
+    return result;
+  }
+
+  private async getReadRating(userId: number, offset: number, year: number) {
+    const result = await this.getFieldStats(userId, offset, year, 'userRating');
+    return result;
+  }
+
+  private async getReadLanguage(userId: number, offset: number, year: number) {
+    const result = await this.getFieldStats(userId, offset, year, 'language');
+    return result;
+  }
+
+  private async getFieldStats(
+    userId: number,
+    offset: number,
+    year: number,
+    groupByField: string,
+  ): Promise<Record<string | number, number>> {
+    const result = await this.bookRepository
+      .createQueryBuilder('book')
+      .select(`book.${groupByField}`, 'key')
+      .addSelect('COUNT(book.id)', 'count')
+      .where('book.userId = :userId', { userId })
+      .andWhere('book.status = :status', { status: BookStatus.Read })
+      .andWhere('book."endDate" IS NOT NULL')
+      .andWhere(
+        `EXTRACT(YEAR FROM book."endDate"::TIMESTAMP - INTERVAL '${offset} minutes') = :year`,
+        { year },
+      )
+      .groupBy(`book.${groupByField}`)
+      .getRawMany();
+
+    return result.reduce(
+      (acc, { key, count }) => {
+        acc[key] = Number(count);
+        return acc;
+      },
+      {} as Record<string | number, number>,
+    );
   }
 }

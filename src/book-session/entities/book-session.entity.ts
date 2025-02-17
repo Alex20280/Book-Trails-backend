@@ -3,7 +3,6 @@ import { Pause } from '@/pause/entities/pause.entity';
 import { Exclude } from 'class-transformer';
 import {
   BeforeInsert,
-  BeforeUpdate,
   Column,
   Entity,
   Index,
@@ -11,7 +10,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { CreateBookSessionDto } from '../dto/create-book-session.dto';
+import { ReadingPlace } from '@/common/enums/book.enum';
 
 @Entity()
 @Index('IDX_BOOKSESSION_BOOK', ['book'])
@@ -32,11 +31,6 @@ export class BookSession {
     this.startDate = new Date().toISOString();
   }
 
-  @BeforeUpdate()
-  setUpdatedAt(): void {
-    this.endDate = new Date().toISOString();
-  }
-
   @Column({ nullable: true, default: null })
   currentPage: number;
 
@@ -53,11 +47,9 @@ export class BookSession {
   })
   pauses: Pause[];
 
-  constructor(payload: CreateBookSessionDto) {
+  constructor(payload: { readingPlace: ReadingPlace }) {
     if (!payload) return;
 
-    if (payload instanceof CreateBookSessionDto) {
-      this.readingPlace = payload.readingPlace;
-    }
+    this.readingPlace = payload.readingPlace;
   }
 }

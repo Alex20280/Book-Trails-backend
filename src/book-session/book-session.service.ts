@@ -28,7 +28,7 @@ export class BookSessionService {
   ) {}
 
   async create(payload: CreateBookSession): Promise<BookSession> {
-    const { userId, bookId, createDto } = payload;
+    const { userId, bookId, readingPlace } = payload;
     try {
       const book = await this.bookRepository.findOneOrFail({
         where: { id: bookId, user: { id: userId } },
@@ -47,7 +47,7 @@ export class BookSessionService {
         { status: BookStatus.Reading },
       );
 
-      const newBookSession = new BookSession(createDto);
+      const newBookSession = new BookSession({ readingPlace });
 
       newBookSession.book = book;
 
@@ -91,10 +91,11 @@ export class BookSessionService {
           { status: BookStatus.Read, isLegacy: true },
         );
       }
-
+      const endDate = new Date().toISOString();
       await this.bookSessionRepository.save(
         this.bookSessionRepository.merge(bookSession, {
           currentPage,
+          endDate,
         }),
       );
 
@@ -104,7 +105,7 @@ export class BookSessionService {
     }
   }
 
-  async finishTheBook(payload: FinishBook) {
+  async finishTheBook(payload: FinishBook): Promise<void> {
     const {
       userId,
       bookId,
@@ -133,10 +134,15 @@ export class BookSessionService {
         review ? this.reviewService.create({ text: review }, manager) : null,
       ]);
 
+      const endDate = new Date().toISOString();
+
       bookSession.currentPage = currentPage;
+      bookSession.endDate = endDate;
 
       book.userRating = stars;
       book.status = BookStatus.Read;
+      book.endDate = endDate;
+      book.isLegacy = true;
 
       if (newReview) {
         book.reviews.push(newReview);
@@ -148,8 +154,6 @@ export class BookSessionService {
       ]);
 
       await queryRunner.commitTransaction();
-
-      return book;
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;
