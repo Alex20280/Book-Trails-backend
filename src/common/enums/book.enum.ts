@@ -30,3 +30,21 @@ export enum ReadingPlace {
   Museum = 'museum',
   Other = 'other',
 }
+
+export enum Language {
+  English = 'english',
+  Russian = 'russian',
+  Ukrainian = 'ukrainian',
+  Spanish = 'spanish',
+  Portuguese = 'portuguese',
+  French = 'french',
+  Czech = 'czech',
+  Turkish = 'turkish',
+  Thai = 'thai',
+  Arabian = 'arabian',
+  German = 'german',
+  Italian = 'italian',
+  Hindi = 'hindi',
+  Bulgarian = 'bulgarian',
+  Magyar = 'magyar',
+}

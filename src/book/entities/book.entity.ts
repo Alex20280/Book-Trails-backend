@@ -1,4 +1,9 @@
-import { BookStatus, BookType, Source } from '@/common/enums/book.enum';
+import {
+  BookStatus,
+  BookType,
+  Language,
+  Source,
+} from '@/common/enums/book.enum';
 import { User } from '@/user/entities/user.entity';
 import {
   Column,
@@ -31,8 +36,8 @@ export class Book {
   @Column()
   genre: string;
 
-  @Column()
-  language: string;
+  @Column({ type: 'enum', enum: Language, nullable: false })
+  language: Language;
 
   @Column({ nullable: true })
   editor: string;

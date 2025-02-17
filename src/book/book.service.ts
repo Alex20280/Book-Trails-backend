@@ -165,7 +165,7 @@ export class BookService {
     let readRating: Record<string, number> | undefined;
     let readLanguage: Record<string, number> | undefined;
 
-    if (subData.subscriptionType !== SubscriptionType.Premium) {
+    if (subData.subscriptionType === SubscriptionType.Premium) {
       [readPlaces, readSources, readRating, readLanguage] = await Promise.all([
         this.getReadPlaces(userId, offset, year),
         this.getReadSource(userId, offset, year),
