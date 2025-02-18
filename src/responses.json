@@ -141,5 +141,34 @@
     "readingTime": 2,
     "sinceStart": 1
   },
-  "message": { "message": "string" }
+  "message": { "message": "string" },
+
+  "readStatistics": {
+    "bookTypes": {
+      "soft": 4
+    },
+    "averageHoursPerWeek": 41,
+    "booksPerMonth": {
+      "2": 4
+    },
+    "readDays": {
+      "2": 2
+    },
+    "readPlaces": {
+      "home": 2,
+      "nature": 1,
+      "waitingRoom": 1
+    },
+    "readSources": {
+      "purchased": 4
+    },
+    "readLanguage": {
+      "hindi": 1,
+      "ukrainian": 2,
+      "portuguese": 1
+    },
+    "readRating": {
+      "3": 4
+    }
+  }
 }

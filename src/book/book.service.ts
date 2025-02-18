@@ -7,7 +7,10 @@ import { Book } from './entities/book.entity';
 import { CloudinaryService } from '@/cloudinary/cloudinary.service';
 import { BookStatus } from '@/common/enums/book.enum';
 import { BookSession } from '@/book-session/entities/book-session.entity';
-import { BookResponse } from '@/common/interfaces/book.interfces';
+import {
+  BookResponse,
+  StatisticsQueryParams,
+} from '@/common/interfaces/book.interfces';
 import {
   createReadDaysResponse,
   formatBooksPerMonth,
@@ -134,19 +137,20 @@ export class BookService {
     return { message: 'book successfully deleted' };
   }
 
-  async getBookStatistics(userId: number, offset: number, year: number) {
-    const booksPerMonthQuery = this.booksPerMonthQuery(userId, offset, year);
-    const readDaysQuery = this.readDaysQuery(userId, offset, year);
-
-    const booksPerMonth = await booksPerMonthQuery.getRawMany();
-    const readDays = await readDaysQuery.getRawMany();
-    const bookTypes = await this.getBookType(userId, offset, year);
-
-    const subData = await this.userRepository
-      .createQueryBuilder('user')
-      .select(['user.id', 'user.subscriptionType'])
-      .where('user.id = :userId', { userId })
-      .getOneOrFail();
+  async getBookStatistics(params: StatisticsQueryParams) {
+    const { userId } = params;
+    const [booksPerMonth, readDays, bookTypes, subData, averageHoursPerWeek] =
+      await Promise.all([
+        this.getBooksPerMonth(params),
+        this.getReadDays(params),
+        this.getBookType(params),
+        this.userRepository
+          .createQueryBuilder('user')
+          .select(['user.id', 'user.subscriptionType'])
+          .where('user.id = :userId', { userId })
+          .getOneOrFail(),
+        this.getAverageHoursPerWeek(params),
+      ]);
 
     let readPlaces: Record<string, number> | undefined;
     let readSources: Record<string, number> | undefined;
@@ -155,31 +159,28 @@ export class BookService {
 
     if (subData.subscriptionType === SubscriptionType.Premium) {
       [readPlaces, readSources, readRating, readLanguage] = await Promise.all([
-        this.getReadPlaces(userId, offset, year),
-        this.getReadSource(userId, offset, year),
-        this.getReadRating(userId, offset, year),
-        this.getReadLanguage(userId, offset, year),
+        this.getReadPlaces(params),
+        this.getReadSource(params),
+        this.getReadRating(params),
+        this.getReadLanguage(params),
       ]);
     }
-    const averageWeekHours = await this.getAverageHoursPerWeek(
-      userId,
-      offset,
-      year,
-    );
+
     return {
+      bookTypes,
+      averageHoursPerWeek,
       booksPerMonth: formatBooksPerMonth(booksPerMonth),
       readDays: createReadDaysResponse(readDays),
-      averageWeekHours,
-      bookTypes,
       ...(readPlaces && { readPlaces }),
       ...(readSources && { readSources }),
-      ...(readRating && { readRating }),
       ...(readLanguage && { readLanguage }),
+      ...(readRating && { readRating }),
     };
   }
 
-  private booksPerMonthQuery(userId: number, offset: number, year: number) {
-    const booksPerMonthQuery = this.bookRepository
+  private async getBooksPerMonth(params: StatisticsQueryParams) {
+    const { userId, offset, year } = params;
+    const booksPerMonth = await this.bookRepository
       .createQueryBuilder('book')
       .innerJoin('book.user', 'user')
       .select([
@@ -198,13 +199,15 @@ export class BookService {
       .orderBy(
         `TO_CHAR(book."endDate"::TIMESTAMP - INTERVAL '${offset} minutes', 'YYYY-MM')`,
         'ASC',
-      );
+      )
+      .getRawMany();
 
-    return booksPerMonthQuery;
+    return booksPerMonth;
   }
 
-  private readDaysQuery(userId: number, offset: number, year: number) {
-    const readDaysQuery = this.bookSessionRepository
+  private async getReadDays(params: StatisticsQueryParams) {
+    const { userId, offset, year } = params;
+    const readDays = await this.bookSessionRepository
       .createQueryBuilder('session')
       .innerJoin('session.book', 'book')
       .innerJoin('book.user', 'user')
@@ -227,17 +230,19 @@ export class BookService {
         `TO_CHAR(session."startDate"::TIMESTAMP - INTERVAL '${offset} minutes', 'YYYY-MM-DD')`,
         'ASC',
       )
-      .addOrderBy('session."startDate"', 'ASC');
+      .addOrderBy('session."startDate"', 'ASC')
+      .getRawMany();
 
-    return readDaysQuery;
+    return readDays;
   }
 
-  private async getBookType(userId: number, offset: number, year: number) {
-    const result = await this.getFieldStats(userId, offset, year, 'type');
+  private async getBookType(params: StatisticsQueryParams) {
+    const result = await this.getFieldStats(params, 'type');
     return result;
   }
 
-  private async getReadPlaces(userId: number, offset: number, year: number) {
+  private async getReadPlaces(params: StatisticsQueryParams) {
+    const { userId, offset, year } = params;
     const data = await this.bookSessionRepository
       .createQueryBuilder('session')
       .innerJoin('session.book', 'book')
@@ -264,27 +269,26 @@ export class BookService {
     return result;
   }
 
-  private async getReadSource(userId: number, offset: number, year: number) {
-    const result = await this.getFieldStats(userId, offset, year, 'source');
+  private async getReadSource(params: StatisticsQueryParams) {
+    const result = await this.getFieldStats(params, 'source');
     return result;
   }
 
-  private async getReadRating(userId: number, offset: number, year: number) {
-    const result = await this.getFieldStats(userId, offset, year, 'userRating');
+  private async getReadRating(params: StatisticsQueryParams) {
+    const result = await this.getFieldStats(params, 'userRating');
     return result;
   }
 
-  private async getReadLanguage(userId: number, offset: number, year: number) {
-    const result = await this.getFieldStats(userId, offset, year, 'language');
+  private async getReadLanguage(params: StatisticsQueryParams) {
+    const result = await this.getFieldStats(params, 'language');
     return result;
   }
 
   private async getFieldStats(
-    userId: number,
-    offset: number,
-    year: number,
+    params: StatisticsQueryParams,
     groupByField: string,
   ): Promise<Record<string | number, number>> {
+    const { userId, offset, year } = params;
     const result = await this.bookRepository
       .createQueryBuilder('book')
       .select(`book.${groupByField}`, 'key')
@@ -308,11 +312,8 @@ export class BookService {
     );
   }
 
-  private async getAverageHoursPerWeek(
-    userId: number,
-    offset: number,
-    year: number,
-  ) {
+  private async getAverageHoursPerWeek(params: StatisticsQueryParams) {
+    const { userId, offset, year } = params;
     const totalTimes = await this.bookSessionRepository
       .createQueryBuilder('session')
       .innerJoin('session.book', 'book')
@@ -336,7 +337,6 @@ export class BookService {
             0,
           )
         : 0;
-    return totalHours;
     return totalHours;
   }
 }
