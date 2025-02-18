@@ -40,16 +40,16 @@ export class BookController {
   constructor(private readonly bookService: BookService) {}
 
   @ApiOperation({
-    summary: 'get read days statistics by month',
+    summary: 'get read  statistics',
   })
-  // @ApiCustomResponse(HttpStatus.OK, responses.message)
+  @ApiCustomResponse(HttpStatus.OK, responses.readStatistics)
   @Get('statistic')
   async getReadDaysByMonth(
     @UserDecorator('id') userId: number,
     @Query('offset') offset: number,
     @Query('year') year: number,
   ) {
-    return await this.bookService.getBookStatistics(userId, offset, year);
+    return await this.bookService.getBookStatistics({ userId, offset, year });
   }
 
   @ApiOperation({

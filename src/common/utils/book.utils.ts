@@ -3,14 +3,6 @@ import { ReadDay } from '../interfaces';
 import { BookStatus } from '../enums/book.enum';
 import { BookSession } from '@/book-session/entities/book-session.entity';
 
-export const getStartEndOfYear = (offset: number, year: number) => {
-  const startOfYear = new Date(Date.UTC(year, 0, 1));
-  const endOfYearUTC = new Date(Date.UTC(year + 1, 0, 1));
-  const startOfYearUserTime = new Date(startOfYear.getTime() + offset * 60000);
-  const endOfYearUserTime = new Date(endOfYearUTC.getTime() + offset * 60000);
-  return { startOfYearUserTime, endOfYearUserTime };
-};
-
 export const createReadDaysResponse = (readDays: ReadDay[]) => {
   const monthDaysCount = readDays.reduce((acc, { readDay }) => {
     const month = new Date(readDay).getMonth() + 1;

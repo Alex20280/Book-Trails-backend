@@ -11,3 +11,9 @@ export interface BookResponse {
   totalReadingTime?: number;
   userRating: number | null;
 }
+
+export interface StatisticsQueryParams {
+  userId: number;
+  offset: number;
+  year: number;
+}
