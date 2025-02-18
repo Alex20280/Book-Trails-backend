@@ -9,7 +9,6 @@ import { BookStatus } from '@/common/enums/book.enum';
 import { BookSession } from '@/book-session/entities/book-session.entity';
 import { BookResponse } from '@/common/interfaces/book.interfces';
 import {
-  getStartEndOfYear,
   createReadDaysResponse,
   formatBooksPerMonth,
   getManyResponse,
@@ -136,19 +135,8 @@ export class BookService {
   }
 
   async getBookStatistics(userId: number, offset: number, year: number) {
-    const { startOfYearUserTime, endOfYearUserTime } = getStartEndOfYear(
-      offset,
-      year,
-    );
-
     const booksPerMonthQuery = this.booksPerMonthQuery(userId, offset, year);
-    const readDaysQuery = this.readDaysQuery(
-      userId,
-      offset,
-      year,
-      startOfYearUserTime,
-      endOfYearUserTime,
-    );
+    const readDaysQuery = this.readDaysQuery(userId, offset, year);
 
     const booksPerMonth = await booksPerMonthQuery.getRawMany();
     const readDays = await readDaysQuery.getRawMany();
@@ -173,10 +161,15 @@ export class BookService {
         this.getReadLanguage(userId, offset, year),
       ]);
     }
-
+    const averageWeekHours = await this.getAverageHoursPerWeek(
+      userId,
+      offset,
+      year,
+    );
     return {
       booksPerMonth: formatBooksPerMonth(booksPerMonth),
       readDays: createReadDaysResponse(readDays),
+      averageWeekHours,
       bookTypes,
       ...(readPlaces && { readPlaces }),
       ...(readSources && { readSources }),
@@ -210,13 +203,7 @@ export class BookService {
     return booksPerMonthQuery;
   }
 
-  private readDaysQuery(
-    userId: number,
-    offset: number,
-    year: number,
-    startOfYearUserTime: Date,
-    endOfYearUserTime: Date,
-  ) {
+  private readDaysQuery(userId: number, offset: number, year: number) {
     const readDaysQuery = this.bookSessionRepository
       .createQueryBuilder('session')
       .innerJoin('session.book', 'book')
@@ -230,16 +217,6 @@ export class BookService {
         `EXTRACT(YEAR FROM session."startDate"::TIMESTAMP - INTERVAL '${offset} minutes') = :year`,
         { year },
       )
-      .andWhere('session."startDate" >= :startOfYearUserTime', {
-        startOfYearUserTime: new Date(
-          startOfYearUserTime.getTime() - offset * 60000,
-        ).toISOString(),
-      })
-      .andWhere('session."startDate" < :endOfYearUserTime', {
-        endOfYearUserTime: new Date(
-          endOfYearUserTime.getTime() - offset * 60000,
-        ).toISOString(),
-      })
       .distinctOn([
         `TO_CHAR(session."startDate"::TIMESTAMP - INTERVAL '${offset} minutes', 'YYYY-MM-DD')`,
       ])
@@ -329,5 +306,37 @@ export class BookService {
       },
       {} as Record<string | number, number>,
     );
+  }
+
+  private async getAverageHoursPerWeek(
+    userId: number,
+    offset: number,
+    year: number,
+  ) {
+    const totalTimes = await this.bookSessionRepository
+      .createQueryBuilder('session')
+      .innerJoin('session.book', 'book')
+      .leftJoin('session.pauses', 'pause')
+      .select([
+        `SUM(EXTRACT(EPOCH FROM (session."endDate"::TIMESTAMP - session."startDate"::TIMESTAMP))) AS "totalReadingTime"`,
+        `COALESCE(SUM(EXTRACT(EPOCH FROM (pause."endDate"::TIMESTAMP - pause."startDate"::TIMESTAMP))), 0) AS "totalPauseTime"`, // Використовуємо COALESCE, щоб замінити NULL на 0
+      ])
+      .where('book."userId" = :userId', { userId })
+      .andWhere('book."status" = :status', { status: BookStatus.Read })
+      .andWhere('session."endDate" IS NOT NULL')
+      .andWhere(
+        `EXTRACT(YEAR FROM session."startDate"::TIMESTAMP - INTERVAL '${offset} minutes') = :year`,
+        { year },
+      )
+      .getRawOne();
+
+    const totalHours =
+      totalTimes.totalReadingTime && totalTimes.totalPauseTime
+        ? +(+totalTimes.totalReadingTime - +totalTimes.totalPauseTime).toFixed(
+            0,
+          )
+        : 0;
+    return totalHours;
+    return totalHours;
   }
 }
