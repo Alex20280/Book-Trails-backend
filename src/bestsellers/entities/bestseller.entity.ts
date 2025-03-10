@@ -18,5 +18,5 @@ export class Bestseller {
   author: string;
 
   @Column()
-  genre: string;
+  category: string;
 }
