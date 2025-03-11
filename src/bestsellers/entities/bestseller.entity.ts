@@ -25,6 +25,9 @@ export class Bestseller {
   author: string;
 
   @Column()
+  language: string;
+
+  @Column()
   pages: number;
 
   @ManyToMany(() => BestCategory, (bestCategory) => bestCategory.bestsellers)
