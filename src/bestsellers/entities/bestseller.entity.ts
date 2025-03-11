@@ -24,6 +24,9 @@ export class Bestseller {
   @Column()
   author: string;
 
+  @Column()
+  pages: number;
+
   @ManyToMany(() => BestCategory, (bestCategory) => bestCategory.bestsellers)
   @JoinTable({ name: 'best_to_cat' })
   categories: Bestseller[];
