@@ -30,7 +30,9 @@ export class Bestseller {
   @Column()
   pages: number;
 
-  @ManyToMany(() => BestCategory, (bestCategory) => bestCategory.bestsellers)
+  @ManyToMany(() => BestCategory, (bestCategory) => bestCategory.bestsellers, {
+    eager: true,
+  })
   @JoinTable({ name: 'best_to_cat' })
-  categories: Bestseller[];
+  categories: BestCategory[];
 }

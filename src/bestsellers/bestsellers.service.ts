@@ -28,6 +28,19 @@ export class BestsellersService {
   }
 
   async findOne(id: number) {
-    return await this.bestRepository.findOneByOrFail({ id });
+    const book = await this.bestRepository.findOneByOrFail({ id });
+
+    const response = {
+      id: book.id,
+      image: book.image,
+      title: book.title,
+      description: book.description,
+      author: book.author,
+      language: book.language,
+      pages: book.pages,
+      category: book.categories.map((c) => c.category).join(', '),
+    };
+
+    return response;
   }
 }
