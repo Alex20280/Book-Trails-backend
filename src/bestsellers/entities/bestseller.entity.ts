@@ -1,4 +1,11 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { BestCategory } from 'src/best-category/entities/best-category.entity';
+import {
+  Column,
+  Entity,
+  JoinTable,
+  ManyToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 @Entity()
 export class Bestseller {
@@ -17,6 +24,7 @@ export class Bestseller {
   @Column()
   author: string;
 
-  @Column()
-  category: string;
+  @ManyToMany(() => BestCategory, (bestCategory) => bestCategory.bestsellers)
+  @JoinTable({ name: 'best_to_cat' })
+  categories: Bestseller[];
 }

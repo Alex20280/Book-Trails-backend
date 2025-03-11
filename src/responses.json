@@ -170,5 +170,24 @@
     "readRating": {
       "3": 4
     }
+  },
+
+  "bestsellers": {
+    "data": [
+      {
+        "id": 1058,
+        "image": "https://res.cloudinar...",
+        "title": "This Is Why We Lied"
+      }
+    ],
+    "categories": ["mystery", "politics"]
+  },
+
+  "bestseller": {
+    "id": 1058,
+    "image": "https://res.cloudinar....",
+    "title": "This Is Why We Lied",
+    "description": "description",
+    "author": "Karin Slaughter"
   }
 }
