@@ -156,14 +156,17 @@ export class BookService {
     let readSources: Record<string, number> | undefined;
     let readRating: Record<string, number> | undefined;
     let readLanguage: Record<string, number> | undefined;
+    let readGenres: Record<string, number> | undefined;
 
     if (subData.subscriptionType === SubscriptionType.Premium) {
-      [readPlaces, readSources, readRating, readLanguage] = await Promise.all([
-        this.getReadPlaces(params),
-        this.getReadSource(params),
-        this.getReadRating(params),
-        this.getReadLanguage(params),
-      ]);
+      [readPlaces, readSources, readRating, readLanguage, readGenres] =
+        await Promise.all([
+          this.getReadPlaces(params),
+          this.getReadSource(params),
+          this.getReadRating(params),
+          this.getReadLanguage(params),
+          this.getReadGenres(params),
+        ]);
     }
 
     return {
@@ -175,6 +178,7 @@ export class BookService {
       ...(readSources && { readSources }),
       ...(readLanguage && { readLanguage }),
       ...(readRating && { readRating }),
+      ...(readGenres && { readGenres }),
     };
   }
 
@@ -281,6 +285,11 @@ export class BookService {
 
   private async getReadLanguage(params: StatisticsQueryParams) {
     const result = await this.getFieldStats(params, 'language');
+    return result;
+  }
+
+  private async getReadGenres(params: StatisticsQueryParams) {
+    const result = await this.getFieldStats(params, 'genre');
     return result;
   }
 
