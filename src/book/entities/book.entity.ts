@@ -7,8 +7,11 @@ import {
 import { User } from '@/user/entities/user.entity';
 import {
   Column,
+  DeepPartial,
   Entity,
   Index,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -17,6 +20,7 @@ import { CreateBookDto } from '../dto/create-book.dto';
 import { Exclude } from 'class-transformer';
 import { BookSession } from '@/book-session/entities/book-session.entity';
 import { Review } from '@/review/entities/review.entity';
+import { Genre } from '@/genre/entities/genre.entity';
 
 @Entity()
 @Index('IDX_BOOK_USER', ['user'])
@@ -32,9 +36,6 @@ export class Book {
 
   @Column({ nullable: true })
   pages: number;
-
-  @Column()
-  genre: string;
 
   @Column({ type: 'enum', enum: Language, nullable: false })
   language: Language;
@@ -90,10 +91,14 @@ export class Book {
   })
   bookSessions: BookSession[];
 
+  @ManyToMany(() => Genre, (genre) => genre.books, { onDelete: 'CASCADE' })
+  @JoinTable({ name: 'book_to_genre' })
+  genres: Genre[];
+
   @OneToMany(() => Review, (review) => review.book, { eager: true })
   reviews: Review[];
 
-  constructor(payload?: CreateBookDto) {
+  constructor(payload?: DeepPartial<CreateBookDto>) {
     if (!payload) return;
     Object.assign(this, payload);
   }

@@ -6,10 +6,12 @@ import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
 import { dataSourceOptions } from '@/db/dbconfig';
 import { AdminSeedService } from './admin.seed.service';
 import { User } from '@/user/entities/user.entity';
+import { Genre } from '@/genre/entities/genre.entity';
+import { GenreSeedService } from './genre/genre.seed.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, Genre]),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
@@ -22,6 +24,6 @@ import { User } from '@/user/entities/user.entity';
     }),
     CloudinaryModule,
   ],
-  providers: [AdminSeedService],
+  providers: [AdminSeedService, GenreSeedService],
 })
 export class SeedModule {}

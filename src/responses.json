@@ -58,7 +58,6 @@
   "updatedSessionPause": { "message": "The book session continues" },
 
   "createBook": {
-    "genre": "string",
     "pages": 234,
     "author": "string",
     "editor": "string",
@@ -69,6 +68,12 @@
     "type": "soft",
     "source": "purchased",
     "description": "string",
+    "genres": [
+      {
+        "id": 138,
+        "name": "history"
+      }
+    ],
     "image": "https://...",
     "userRating": null,
     "id": 15
