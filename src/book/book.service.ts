@@ -21,6 +21,7 @@ import {
   calculateSinceStart,
 } from '@/common/utils';
 import { SubscriptionType } from '@/common/enums/user.enum';
+import { Genre } from '@/genre/entities/genre.entity';
 
 @Injectable()
 export class BookService {
@@ -31,6 +32,8 @@ export class BookService {
     private bookRepository: Repository<Book>,
     @InjectRepository(BookSession)
     private bookSessionRepository: Repository<BookSession>,
+    @InjectRepository(Genre)
+    private genreRepository: Repository<Genre>,
     readonly cloudinaryService: CloudinaryService,
   ) {}
 
@@ -40,15 +43,19 @@ export class BookService {
     image?: Express.Multer.File,
   ): Promise<Book> {
     const user = await this.userRepository.findOneByOrFail({ id: userId });
-    const newBook = new Book(payload);
-
+    const { genre, ...rest } = payload;
+    const newBook = new Book(rest);
+    const existingGenre = await this.genreRepository.findOneByOrFail({
+      name: genre.toLowerCase().trim(),
+    });
+    newBook.genres = [existingGenre];
     newBook.user = user;
 
     if (image) {
       const { secure_url } = await this.cloudinaryService.uploadFile(image);
       newBook.image = secure_url;
     }
-
+    console.log('object :>> ', await this.bookRepository.save(newBook));
     return await this.bookRepository.save(newBook);
   }
 
@@ -289,8 +296,30 @@ export class BookService {
   }
 
   private async getReadGenres(params: StatisticsQueryParams) {
-    const result = await this.getFieldStats(params, 'genre');
-    return result;
+    const { userId, offset, year } = params;
+
+    const result = await this.bookRepository
+      .createQueryBuilder('book')
+      .innerJoin('book.genres', 'genre')
+      .select('genre.name', 'key')
+      .addSelect('COUNT(book.id)', 'count')
+      .where('book.userId = :userId', { userId })
+      .andWhere('book.status = :status', { status: BookStatus.Read })
+      .andWhere('book."endDate" IS NOT NULL')
+      .andWhere(
+        `EXTRACT(YEAR FROM book."endDate"::TIMESTAMP - INTERVAL '${offset} minutes') = :year`,
+        { year },
+      )
+      .groupBy('genre.name')
+      .getRawMany();
+
+    return result.reduce(
+      (acc, { key, count }) => {
+        acc[key] = Number(count);
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
   }
 
   private async getFieldStats(

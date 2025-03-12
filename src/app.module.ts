@@ -19,6 +19,7 @@ import { ReviewModule } from './review/review.module';
 import { SupportRequestModule } from './support-request/support-request.module';
 import { BestsellersModule } from './bestsellers/bestsellers.module';
 import { BestCategoryModule } from './best-category/best-category.module';
+import { GenreModule } from './genre/genre.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { BestCategoryModule } from './best-category/best-category.module';
     SupportRequestModule,
     BestsellersModule,
     BestCategoryModule,
+    GenreModule,
   ],
   controllers: [AppController],
   providers: [
