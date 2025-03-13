@@ -231,6 +231,7 @@ export class BookService {
         `EXTRACT(YEAR FROM session."startDate"::TIMESTAMP - INTERVAL '${offset} minutes') = :year`,
         { year },
       )
+      .andWhere('session."endDate" IS NOT NULL')
       .distinctOn([
         `TO_CHAR(session."startDate"::TIMESTAMP - INTERVAL '${offset} minutes', 'YYYY-MM-DD')`,
       ])
@@ -261,11 +262,11 @@ export class BookService {
       .select('session.readingPlace', 'place')
       .addSelect('COUNT(session.readingPlace)', 'count')
       .where('user.id = :userId', { userId })
-      .andWhere('book.status = :status', { status: BookStatus.Read })
       .andWhere(
-        `EXTRACT(YEAR FROM book."endDate"::TIMESTAMP - INTERVAL '${offset} minutes') = :year`,
+        `EXTRACT(YEAR FROM session."startDate"::TIMESTAMP - INTERVAL '${offset} minutes') = :year`,
         { year },
       )
+      .andWhere('session."endDate" IS NOT NULL')
       .groupBy('session.readingPlace')
       .getRawMany();
 
@@ -286,7 +287,7 @@ export class BookService {
   }
 
   private async getReadRating(params: StatisticsQueryParams) {
-    const result = await this.getFieldStats(params, 'userRating');
+    const result = await this.getFieldStats(params, 'userRating', true);
     return result;
   }
 
@@ -301,15 +302,15 @@ export class BookService {
     const result = await this.bookRepository
       .createQueryBuilder('book')
       .innerJoin('book.genres', 'genre')
+      .innerJoin('book.bookSessions', 'session')
       .select('genre.name', 'key')
       .addSelect('COUNT(book.id)', 'count')
       .where('book.userId = :userId', { userId })
-      .andWhere('book.status = :status', { status: BookStatus.Read })
-      .andWhere('book."endDate" IS NOT NULL')
       .andWhere(
-        `EXTRACT(YEAR FROM book."endDate"::TIMESTAMP - INTERVAL '${offset} minutes') = :year`,
+        `EXTRACT(YEAR FROM session."startDate"::TIMESTAMP - INTERVAL '${offset} minutes') = :year`,
         { year },
       )
+      .andWhere('session."endDate" IS NOT NULL')
       .groupBy('genre.name')
       .getRawMany();
 
@@ -325,21 +326,30 @@ export class BookService {
   private async getFieldStats(
     params: StatisticsQueryParams,
     groupByField: string,
+    isRead: boolean = false,
   ): Promise<Record<string | number, number>> {
     const { userId, offset, year } = params;
-    const result = await this.bookRepository
+
+    const queryBuilder = this.bookRepository
       .createQueryBuilder('book')
+      .innerJoin('book.bookSessions', 'session') // Приєднуємо сесії
       .select(`book.${groupByField}`, 'key')
       .addSelect('COUNT(book.id)', 'count')
       .where('book.userId = :userId', { userId })
-      .andWhere('book.status = :status', { status: BookStatus.Read })
-      .andWhere('book."endDate" IS NOT NULL')
       .andWhere(
-        `EXTRACT(YEAR FROM book."endDate"::TIMESTAMP - INTERVAL '${offset} minutes') = :year`,
+        `EXTRACT(YEAR FROM session."startDate"::TIMESTAMP - INTERVAL '${offset} minutes') = :year`,
         { year },
       )
-      .groupBy(`book.${groupByField}`)
-      .getRawMany();
+      .andWhere('session."endDate" IS NOT NULL')
+      .groupBy(`book.${groupByField}`);
+
+    if (isRead) {
+      queryBuilder.andWhere('book."status" = :status', {
+        status: BookStatus.Read,
+      });
+    }
+
+    const result = await queryBuilder.getRawMany();
 
     return result.reduce(
       (acc, { key, count }) => {
@@ -361,7 +371,7 @@ export class BookService {
         `COALESCE(SUM(EXTRACT(EPOCH FROM (pause."endDate"::TIMESTAMP - pause."startDate"::TIMESTAMP))), 0) AS "totalPauseTime"`, // Використовуємо COALESCE, щоб замінити NULL на 0
       ])
       .where('book."userId" = :userId', { userId })
-      .andWhere('book."status" = :status', { status: BookStatus.Read })
+      // .andWhere('book."status" = :status', { status: BookStatus.Read })
       .andWhere('session."endDate" IS NOT NULL')
       .andWhere(
         `EXTRACT(YEAR FROM session."startDate"::TIMESTAMP - INTERVAL '${offset} minutes') = :year`,
