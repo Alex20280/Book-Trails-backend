@@ -11,6 +11,7 @@ import {
   ParseIntPipe,
   HttpStatus,
   Delete,
+  Patch,
 } from '@nestjs/common';
 import { BookService } from './book.service';
 import { CreateBookDto } from './dto/create-book.dto';
@@ -113,5 +114,14 @@ export class BookController {
     @Param('id') id: number,
   ): Promise<{ message: string }> {
     return await this.bookService.delete(userId, id);
+  }
+
+  @ApiOperation({
+    summary: 'reread book',
+  })
+  // @ApiCustomResponse(HttpStatus.OK, responses.message)
+  @Patch(':id')
+  async reRead(@UserDecorator('id') userId: number, @Param('id') id: number) {
+    return await this.bookService.reRead(userId, id);
   }
 }

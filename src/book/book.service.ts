@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { CreateBookDto } from './dto/create-book.dto';
 import { User } from '@/user/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -22,6 +22,7 @@ import {
 } from '@/common/utils';
 import { SubscriptionType } from '@/common/enums/user.enum';
 import { Genre } from '@/genre/entities/genre.entity';
+import { ReadCount } from '@/read-count/entities/read-count.entity';
 
 @Injectable()
 export class BookService {
@@ -34,6 +35,8 @@ export class BookService {
     private bookSessionRepository: Repository<BookSession>,
     @InjectRepository(Genre)
     private genreRepository: Repository<Genre>,
+    @InjectRepository(ReadCount)
+    private readCountRepository: Repository<ReadCount>,
     readonly cloudinaryService: CloudinaryService,
   ) {}
 
@@ -144,6 +147,31 @@ export class BookService {
     return { message: 'book successfully deleted' };
   }
 
+  async reRead(userId: number, bookId: number) {
+    const book = await this.bookRepository.findOneByOrFail({
+      id: bookId,
+      user: { id: userId },
+    });
+
+    if (!book.endDate) {
+      throw new ConflictException('this book is not yet finished!');
+    }
+
+    const readCount = new ReadCount();
+    readCount.book = book;
+    readCount.readDate = book.endDate;
+    readCount.userRating = book.userRating;
+
+    book.status = BookStatus.Reading;
+    book.endDate = null;
+    book.userRating = null;
+
+    await Promise.all([
+      this.readCountRepository.save(readCount),
+      this.bookRepository.save(book),
+    ]);
+  }
+
   async getBookStatistics(params: StatisticsQueryParams) {
     const { userId } = params;
     const [booksPerMonth, readDays, bookTypes, subData, averageHoursPerWeek] =
@@ -179,7 +207,7 @@ export class BookService {
     return {
       bookTypes,
       averageHoursPerWeek,
-      booksPerMonth: formatBooksPerMonth(booksPerMonth),
+      booksPerMonth,
       readDays: createReadDaysResponse(readDays),
       ...(readPlaces && { readPlaces }),
       ...(readSources && { readSources }),
@@ -190,6 +218,64 @@ export class BookService {
   }
 
   private async getBooksPerMonth(params: StatisticsQueryParams) {
+    const { userId, offset, year } = params;
+
+    const [booksPerMonth, hasReReadBooks] = await Promise.all([
+      this.bookPerMonth(params),
+      this.readCountRepository
+        .createQueryBuilder('readCount')
+        .innerJoin('readCount.book', 'book')
+        .where('book.userId = :userId', { userId })
+        .getCount(),
+    ]);
+
+    let result: any;
+
+    if (hasReReadBooks) {
+      const readCountResults = await this.readCountRepository
+        .createQueryBuilder('count')
+        .innerJoin('count.book', 'book')
+        .select([
+          `TO_CHAR(count."readDate"::TIMESTAMP - INTERVAL '${offset} minutes', 'YYYY-MM') AS readMonth`,
+          `COUNT(count.id) AS bookCount`,
+        ])
+        .where('book.userId = :userId', { userId })
+        .andWhere(
+          `EXTRACT(YEAR FROM "count"."readDate"::TIMESTAMP - INTERVAL '${offset} minutes') = :year`,
+          { year },
+        )
+        .groupBy(
+          `TO_CHAR(count."readDate"::TIMESTAMP - INTERVAL '${offset} minutes', 'YYYY-MM')`,
+        )
+        .orderBy(
+          `TO_CHAR(count."readDate"::TIMESTAMP - INTERVAL '${offset} minutes', 'YYYY-MM')`,
+          'ASC',
+        )
+        .getRawMany();
+
+      result = [...booksPerMonth, ...readCountResults];
+
+      result = result.reduce((acc: any, { readmonth, bookcount }) => {
+        const month = readmonth.split('-')[1];
+        const count = parseInt(bookcount);
+        if (acc[month]) {
+          acc[month].bookcount += count;
+        } else {
+          acc[month] = { readmonth, bookcount: count };
+        }
+
+        return acc;
+      }, {});
+
+      result = Object.values(result);
+    }
+
+    return result
+      ? formatBooksPerMonth(result)
+      : formatBooksPerMonth(booksPerMonth);
+  }
+
+  private async bookPerMonth(params: StatisticsQueryParams) {
     const { userId, offset, year } = params;
     const booksPerMonth = await this.bookRepository
       .createQueryBuilder('book')

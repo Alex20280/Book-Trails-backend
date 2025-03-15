@@ -20,6 +20,7 @@ import { SupportRequestModule } from './support-request/support-request.module';
 import { BestsellersModule } from './bestsellers/bestsellers.module';
 import { BestCategoryModule } from './best-category/best-category.module';
 import { GenreModule } from './genre/genre.module';
+import { ReadCountModule } from './read-count/read-count.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { GenreModule } from './genre/genre.module';
     BestsellersModule,
     BestCategoryModule,
     GenreModule,
+    ReadCountModule,
   ],
   controllers: [AppController],
   providers: [

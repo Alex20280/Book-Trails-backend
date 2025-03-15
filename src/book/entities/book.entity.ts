@@ -21,6 +21,7 @@ import { Exclude } from 'class-transformer';
 import { BookSession } from '@/book-session/entities/book-session.entity';
 import { Review } from '@/review/entities/review.entity';
 import { Genre } from '@/genre/entities/genre.entity';
+import { ReadCount } from '@/read-count/entities/read-count.entity';
 
 @Entity()
 @Index('IDX_BOOK_USER', ['user'])
@@ -97,6 +98,10 @@ export class Book {
 
   @OneToMany(() => Review, (review) => review.book, { eager: true })
   reviews: Review[];
+
+  @Exclude()
+  @OneToMany(() => ReadCount, (readCount) => readCount.book, { eager: true })
+  readCount: ReadCount[];
 
   constructor(payload?: DeepPartial<CreateBookDto>) {
     if (!payload) return;
