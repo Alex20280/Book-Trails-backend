@@ -23,6 +23,7 @@ export class BookSessionService {
     readonly bookSessionRepository: Repository<BookSession>,
     @InjectRepository(Book)
     readonly bookRepository: Repository<Book>,
+
     readonly reviewService: ReviewService,
     readonly dataSource: DataSource,
   ) {}
@@ -120,6 +121,8 @@ export class BookSessionService {
     try {
       const manager = queryRunner.manager;
 
+      const endDate = new Date().toISOString();
+
       const [book, bookSession, newReview] = await Promise.all([
         manager.findOneOrFail(Book, {
           where: { id: bookId },
@@ -133,8 +136,6 @@ export class BookSessionService {
         }),
         review ? this.reviewService.create({ text: review }, manager) : null,
       ]);
-
-      const endDate = new Date().toISOString();
 
       bookSession.currentPage = currentPage;
       bookSession.endDate = endDate;
