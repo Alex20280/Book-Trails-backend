@@ -9,7 +9,6 @@ export const FirebaseAdminProvider = {
     const rawPrivateKey = configService.get<string>('PRIVATE_KEY');
     const privateKey = rawPrivateKey.replace(/\\n/g, '\n');
 
-    // Перевірка, чи додаток вже ініціалізовано
     if (admin.apps.length === 0) {
       admin.initializeApp({
         credential: admin.credential.cert({
@@ -20,7 +19,6 @@ export const FirebaseAdminProvider = {
       });
     }
 
-    // Повертаємо вже ініціалізований Firebase додаток
     return admin;
   },
   inject: [ConfigService],
