@@ -6,40 +6,53 @@ import * as firebase from 'firebase-admin';
 export class NotificationService {
   async sendNotification(payload: SendNotificationDto) {
     try {
-      await firebase
-        .messaging()
-        .send({
+      const response = await firebase.messaging().send({
+        notification: {
+          title: payload.title,
+          body: payload.body,
+        },
+        token: payload.deviceId,
+        data: {},
+        android: {
+          priority: 'high',
           notification: {
-            title: payload.title,
-            body: payload.body,
+            sound: 'default',
+            channelId: 'default',
           },
-          token: payload.deviceId,
-          data: {},
-          android: {
-            priority: 'high',
-            notification: {
+        },
+        apns: {
+          headers: {
+            'apns-priority': '10',
+          },
+          payload: {
+            aps: {
+              contentAvailable: true,
               sound: 'default',
-              channelId: 'default',
             },
           },
-          apns: {
-            headers: {
-              'apns-priority': '10',
-            },
-            payload: {
-              aps: {
-                contentAvailable: true,
-                sound: 'default',
-              },
-            },
-          },
-        })
-        .catch((error: any) => {
-          console.error(error);
-        });
+        },
+      });
+
+      console.log(
+        '✅ Повідомлення успішно відправлено! Response ID:',
+        response,
+      );
+      return {
+        success: true,
+        messageId: response,
+      };
     } catch (error) {
-      console.log(error);
-      throw error;
+      console.error('❌ Помилка при надсиланні повідомлення:', error);
+
+      // Можна додатково обробити тип помилки
+      if (error.code === 'messaging/registration-token-not-registered') {
+        console.warn('⚠️ Токен більше не дійсний. Його слід видалити з бази.');
+      }
+
+      return {
+        success: false,
+        error: error.message || 'Unknown error',
+      };
     }
   }
 }
