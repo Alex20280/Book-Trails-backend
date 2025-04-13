@@ -8,6 +8,6 @@ export class NotificationController {
 
   @Post()
   async sendNotification(@Body() payload: SendNotificationDto) {
-    return this.notificationService.sendNotification(payload);
+    return await this.notificationService.sendNotification(payload);
   }
 }
