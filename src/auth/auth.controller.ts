@@ -45,6 +45,7 @@ export class AuthController {
     summary: 'user registration',
   })
   @ApiCustomResponse(HttpStatus.CREATED, responses.register)
+  @ApiCustomResponse(HttpStatus.BAD_REQUEST, responses.registerErrors)
   async register(@Body() payload: CreateUserDto): Promise<User> {
     return await this.authService.createUser(payload);
   }
@@ -55,6 +56,7 @@ export class AuthController {
     summary: 'email verification',
   })
   @ApiCustomResponse(HttpStatus.OK, responses.accessToken)
+  @ApiCustomResponse(HttpStatus.BAD_REQUEST, responses.verifyEmailErrors)
   async verifyEmail(
     @Res({ passthrough: true }) response: Response,
     @Body() payload: VerifyEmailDto,
@@ -74,6 +76,7 @@ export class AuthController {
     summary: 'user login',
   })
   @ApiCustomResponse(HttpStatus.OK, responses.userLogin)
+  @ApiCustomResponse(HttpStatus.UNAUTHORIZED, responses.userLoginError)
   @Post('login')
   async login(
     @UserDecorator() user: User,
@@ -92,6 +95,8 @@ export class AuthController {
     summary: 'send code to email for reset password',
   })
   @Patch('forget-password')
+  @ApiCustomResponse(HttpStatus.OK, responses.booalen)
+  @ApiCustomResponse(HttpStatus.NOT_FOUND, responses.notFound)
   async forgetPassword(@Body() payload: ForgetPasswordDto): Promise<boolean> {
     return await this.authService.forgetPassword(payload.email);
   }
@@ -101,6 +106,7 @@ export class AuthController {
     summary: 'set new password',
   })
   @ApiCustomResponse(HttpStatus.OK, responses.userLogin)
+  @ApiCustomResponse(HttpStatus.BAD_REQUEST, responses.setNewPasswordErrors)
   @Patch('set-new-password')
   async setNewPassword(
     @Body() payload: SetNewPasswordDto,
@@ -120,6 +126,7 @@ export class AuthController {
   })
   @ApiCustomResponse(HttpStatus.CREATED, responses.googleToken)
   @ApiCustomResponse(HttpStatus.OK, responses.googleToken)
+  @ApiCustomResponse(HttpStatus.BAD_REQUEST, responses.googleTokenError)
   async verifyGoogleMobileIdToken(
     @Body() payload: VerifyGoogleMobileIdTokenDto,
   ) {
@@ -132,6 +139,7 @@ export class AuthController {
     summary: 'login after choosing google account',
   })
   @ApiCustomResponse(HttpStatus.CREATED, responses.accessToken)
+  @ApiCustomResponse(HttpStatus.NOT_FOUND, responses.notFound)
   async googleLogin(
     @Body() payload: GoogleLoginDto,
     @Res({ passthrough: true }) response: Response,
@@ -152,6 +160,7 @@ export class AuthController {
     summary: 'generate new tokens',
   })
   @ApiCustomResponse(HttpStatus.CREATED, responses.accessToken)
+  @ApiCustomResponse(HttpStatus.UNAUTHORIZED, responses.unauthorized)
   async refreshToken(
     @Request() request: req,
     @Res({ passthrough: true }) response: Response,

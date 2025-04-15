@@ -61,6 +61,14 @@ export class User {
   resetPasswordCode: string;
 
   @Exclude()
+  @Column({ nullable: true })
+  firebaseDeviceId: string;
+
+  @Exclude()
+  @Column({ nullable: true, default: false })
+  isSubscribe: boolean;
+
+  @Exclude()
   @Column()
   createdAt: string;
 

@@ -44,7 +44,6 @@ export class NotificationService {
     } catch (error) {
       console.error('❌ Помилка при надсиланні повідомлення:', error);
 
-      // Можна додатково обробити тип помилки
       if (error.code === 'messaging/registration-token-not-registered') {
         console.warn('⚠️ Токен більше не дійсний. Його слід видалити з бази.');
       }

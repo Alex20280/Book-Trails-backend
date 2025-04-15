@@ -9,6 +9,30 @@
     "isLoggedIn": false,
     "isVerifyEmail": false
   },
+  "registerErrors": {
+    "message": [
+      "Incorrect email format",
+      "The email address cannot contain spaces",
+      "the password must contain one capital letter, one digit and one special character"
+    ],
+    "error": "Bad Request",
+    "statusCode": 400
+  },
+  "verifyEmailErrors": [
+    {
+      "message": [
+        "Incorrect email format",
+        "The email address cannot contain spaces"
+      ],
+      "error": "Bad Request",
+      "statusCode": 400
+    },
+    {
+      "message": "Invalid token",
+      "error": "Bad Request",
+      "statusCode": 400
+    }
+  ],
 
   "userLogin": {
     "existingUser": {
@@ -23,8 +47,34 @@
     },
     "accessToken": "jwt"
   },
+
+  "setNewPasswordErrors": [
+    {
+      "message": [
+        "the password must contain one capital letter, one digit and one special character"
+      ],
+      "error": "Bad Request",
+      "statusCode": 400
+    },
+
+    {
+      "message": "Invalid reset code",
+      "error": "Bad Request",
+      "statusCode": 400
+    }
+  ],
+
+  "userLoginError": {
+    "message": "User not found",
+    "error": "Unauthorized",
+    "statusCode": 401
+  },
   "accessToken": {
     "accesToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6....."
+  },
+  "unauthorized": {
+    "message": "Unauthorized",
+    "statusCode": 401
   },
 
   "userLogout": {
@@ -33,6 +83,12 @@
   },
 
   "googleToken": { "googleToken": "string" },
+
+  "googleTokenError": {
+    "message": ["token must be a jwt string"],
+    "error": "Bad Request",
+    "statusCode": 400
+  },
 
   "changeEmail": {
     "message": "A confirmation code has been sent to your new email address."
@@ -194,5 +250,13 @@
     "title": "This Is Why We Lied",
     "description": "description",
     "author": "Karin Slaughter"
+  },
+
+  "booalen": true,
+
+  "notFound": {
+    "message": "User not found",
+    "error": "Not Found",
+    "statusCode": 404
   }
 }

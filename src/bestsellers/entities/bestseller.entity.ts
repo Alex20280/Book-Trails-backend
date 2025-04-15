@@ -31,7 +31,8 @@ export class Bestseller {
   pages: number;
 
   @ManyToMany(() => BestCategory, (bestCategory) => bestCategory.bestsellers, {
-    eager: true,
+    cascade: true,
+    onDelete: 'CASCADE',
   })
   @JoinTable({ name: 'best_to_cat' })
   categories: BestCategory[];
