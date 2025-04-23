@@ -4,6 +4,8 @@ import {
   Column,
   Entity,
   JoinColumn,
+  JoinTable,
+  ManyToMany,
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -12,6 +14,7 @@ import { Exclude } from 'class-transformer';
 import { Role, SubscriptionType } from '@/common/enums/user.enum';
 import { Session } from '@/session/entities/session.entity';
 import { Book } from '@/book/entities/book.entity';
+import { Achievement } from '@/achievement/entities/achievement.entity';
 
 @Entity()
 export class User {
@@ -93,6 +96,10 @@ export class User {
 
   @OneToMany(() => Book, (book) => book.user)
   books: Book[];
+
+  @ManyToMany(() => Achievement, (achievement) => achievement.users)
+  @JoinTable({ name: 'ach_to_user' })
+  achievements: Achievement[];
 
   constructor(payload?: CreateUserDto) {
     if (!payload) return;

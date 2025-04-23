@@ -1,10 +1,24 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { AchievementName } from '@/seed/achievement/enum';
+import { User } from '@/user/entities/user.entity';
+import { Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Achievement {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column({ type: 'enum', enum: AchievementName, nullable: false })
+  name: AchievementName;
+
   @Column()
-  name: string;
+  title: string;
+
+  @ManyToMany(() => User, (user) => user.achievements, { onDelete: 'CASCADE' })
+  @JoinTable({ name: 'ach_to_user' })
+  users: User[];
+
+  constructor(payload?: Partial<Achievement>) {
+    if (!payload) return;
+    Object.assign(this, payload);
+  }
 }
