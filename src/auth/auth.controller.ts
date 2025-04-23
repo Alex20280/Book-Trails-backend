@@ -26,11 +26,7 @@ import { CreateUserDto } from '@/user/dto/create-user.dto';
 import { LoginUserDto } from '@/user/dto/login-user.dto';
 import { ForgetPasswordDto } from '@/auth/dto/forget-password.dto';
 import { SetNewPasswordDto } from './dto/set-new-passwor.dto';
-import {
-  GoogleLoginDto,
-  VerifyEmailDto,
-  VerifyGoogleMobileIdTokenDto,
-} from './dto';
+import { GoogleLoginDto, VerifyEmailDto, VerifyGoogleMobileIdTokenDto } from './dto';
 import { DeepPartial } from 'typeorm';
 import { RefreshJwtAuthGuard } from './guards/jwt.refresh.auth.guard';
 
@@ -61,8 +57,7 @@ export class AuthController {
     @Res({ passthrough: true }) response: Response,
     @Body() payload: VerifyEmailDto,
   ): Promise<DeepPartial<Tokens>> {
-    const { accessToken, refreshToken } =
-      await this.authService.verifyUserEmail(payload);
+    const { accessToken, refreshToken } = await this.authService.verifyUserEmail(payload);
 
     setRefreshTokenCookie(response, refreshToken);
 
@@ -82,8 +77,7 @@ export class AuthController {
     @UserDecorator() user: User,
     @Res({ passthrough: true }) response: Response,
   ): Promise<CLoginResponse> {
-    const { loggedInUser, accessToken, refreshToken } =
-      await this.authService.login(user);
+    const { loggedInUser, accessToken, refreshToken } = await this.authService.login(user);
 
     setRefreshTokenCookie(response, refreshToken);
 
@@ -127,9 +121,7 @@ export class AuthController {
   @ApiCustomResponse(HttpStatus.CREATED, responses.googleToken)
   @ApiCustomResponse(HttpStatus.OK, responses.googleToken)
   @ApiCustomResponse(HttpStatus.BAD_REQUEST, responses.googleTokenError)
-  async verifyGoogleMobileIdToken(
-    @Body() payload: VerifyGoogleMobileIdTokenDto,
-  ) {
+  async verifyGoogleMobileIdToken(@Body() payload: VerifyGoogleMobileIdTokenDto) {
     return await this.authService.verifyGoogleMobileIdToken(payload.token);
   }
 
@@ -144,8 +136,7 @@ export class AuthController {
     @Body() payload: GoogleLoginDto,
     @Res({ passthrough: true }) response: Response,
   ): Promise<{ accessToken: string }> {
-    const { accessToken, refreshToken } =
-      await this.authService.googleLogin(payload);
+    const { accessToken, refreshToken } = await this.authService.googleLogin(payload);
 
     setRefreshTokenCookie(response, refreshToken);
 
@@ -161,12 +152,8 @@ export class AuthController {
   })
   @ApiCustomResponse(HttpStatus.CREATED, responses.accessToken)
   @ApiCustomResponse(HttpStatus.UNAUTHORIZED, responses.unauthorized)
-  async refreshToken(
-    @Request() request: req,
-    @Res({ passthrough: true }) response: Response,
-  ) {
-    if (!request.headers.cookie)
-      throw new BadRequestException('Cookie is required!');
+  async refreshToken(@Request() request: req, @Res({ passthrough: true }) response: Response) {
+    if (!request.headers.cookie) throw new BadRequestException('Cookie is required!');
 
     const existingRefreshToken = request.headers.cookie
       ?.split(';')
@@ -174,8 +161,7 @@ export class AuthController {
       .find((cookie) => cookie.startsWith('refresh_token='))
       ?.split('=')[1];
     // return existingRefreshToken;
-    const { accessToken, refreshToken } =
-      await this.authService.refreshToken(existingRefreshToken);
+    const { accessToken, refreshToken } = await this.authService.refreshToken(existingRefreshToken);
 
     setRefreshTokenCookie(response, refreshToken);
 

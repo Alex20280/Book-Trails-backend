@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  Injectable,
-} from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 
 import { BookSession } from './entities/book-session.entity';
 import { Repository, DataSource } from 'typeorm';
@@ -15,6 +11,8 @@ import {
 } from '@/common/interfaces/book.session.service.interfaces';
 import { BookStatus } from '@/common/enums/book.enum';
 import { ReviewService } from '../review/review.service';
+import { User } from '@/user/entities/user.entity';
+import { NotificationService } from '@/notification/notification.service';
 
 @Injectable()
 export class BookSessionService {
@@ -23,7 +21,9 @@ export class BookSessionService {
     readonly bookSessionRepository: Repository<BookSession>,
     @InjectRepository(Book)
     readonly bookRepository: Repository<Book>,
-
+    @InjectRepository(User)
+    readonly userRepository: Repository<User>,
+    readonly notificationService: NotificationService,
     readonly reviewService: ReviewService,
     readonly dataSource: DataSource,
   ) {}
@@ -35,18 +35,13 @@ export class BookSessionService {
         where: { id: bookId, user: { id: userId } },
       });
 
-      const isSomeSessionNotnished = book.bookSessions.some(
-        (s) => s.endDate === null,
-      );
+      const isSomeSessionNotnished = book.bookSessions.some((s) => s.endDate === null);
 
       if (isSomeSessionNotnished) {
         throw new ConflictException('Some reading session is not finished!');
       }
 
-      await this.bookRepository.update(
-        { id: book.id },
-        { status: BookStatus.Reading },
-      );
+      await this.bookRepository.update({ id: book.id }, { status: BookStatus.Reading });
 
       const newBookSession = new BookSession({ readingPlace });
 
@@ -59,12 +54,7 @@ export class BookSessionService {
   }
 
   async update(payload: UpdateBookSession): Promise<{ message: string }> {
-    const {
-      userId,
-      bookId,
-      bookSessionId,
-      updateDto: { currentPage } = {},
-    } = payload;
+    const { userId, bookId, bookSessionId, updateDto: { currentPage } = {} } = payload;
 
     try {
       const [book, bookSession] = await Promise.all([
@@ -106,7 +96,7 @@ export class BookSessionService {
     }
   }
 
-  async finishTheBook(payload: FinishBook): Promise<void> {
+  async finishTheBook(payload: FinishBook): Promise<boolean> {
     const {
       userId,
       bookId,
@@ -123,19 +113,48 @@ export class BookSessionService {
 
       const endDate = new Date().toISOString();
 
-      const [book, bookSession, newReview] = await Promise.all([
+      const [book, { user, legacyBookCount }, bookSession, newReview] = await Promise.all([
         manager.findOneOrFail(Book, {
           where: { id: bookId },
           select: ['id', 'pages'],
         }),
+
+        manager
+          .createQueryBuilder(User, 'user')
+          .leftJoin('user.books', 'book', 'book.isLegacy = true')
+          .select(['user.id', 'user.firebaseDeviceId'])
+          .addSelect('COUNT(book.id)', 'legacyBookCount')
+          .where('user.id = :userId', { userId })
+          .groupBy('user.id')
+          .addGroupBy('user.firebaseDeviceId')
+          .getRawAndEntities()
+          .then(({ entities: [user], raw: [raw] }) => ({
+            user,
+            legacyBookCount: Number(raw.legacyBookCount),
+          })),
+
         manager.findOneOrFail(BookSession, {
           where: {
             id: bookSessionId,
             book: { id: bookId, user: { id: userId } },
           },
         }),
+
         review ? this.reviewService.create({ text: review }, manager) : null,
       ]);
+
+      if (currentPage > book.pages) {
+        throw new BadRequestException('Current page cannot be greater than total pages');
+      }
+
+      const firebaseDeviceId = user.firebaseDeviceId;
+
+      if (legacyBookCount + 1 === 1) {
+        await this.notificationService.sendLegacyBookMilestone(
+          firebaseDeviceId,
+          legacyBookCount + 1,
+        );
+      }
 
       bookSession.currentPage = currentPage;
       bookSession.endDate = endDate;
@@ -149,12 +168,10 @@ export class BookSessionService {
         book.reviews.push(newReview);
       }
 
-      await Promise.all([
-        manager.save(BookSession, bookSession),
-        manager.save(Book, book),
-      ]);
+      await Promise.all([manager.save(BookSession, bookSession), manager.save(Book, book)]);
 
       await queryRunner.commitTransaction();
+      return true;
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;

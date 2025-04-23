@@ -7,10 +7,7 @@ import { Book } from './entities/book.entity';
 import { CloudinaryService } from '@/cloudinary/cloudinary.service';
 import { BookStatus } from '@/common/enums/book.enum';
 import { BookSession } from '@/book-session/entities/book-session.entity';
-import {
-  BookResponse,
-  StatisticsQueryParams,
-} from '@/common/interfaces/book.interfces';
+import { BookResponse, StatisticsQueryParams } from '@/common/interfaces/book.interfces';
 import {
   createReadDaysResponse,
   formatBooksPerMonth,
@@ -40,11 +37,7 @@ export class BookService {
     readonly cloudinaryService: CloudinaryService,
   ) {}
 
-  async create(
-    userId: number,
-    payload: CreateBookDto,
-    image?: Express.Multer.File,
-  ): Promise<Book> {
+  async create(userId: number, payload: CreateBookDto, image?: Express.Multer.File): Promise<Book> {
     const user = await this.userRepository.findOneByOrFail({ id: userId });
     const { genre, ...rest } = payload;
     const newBook = new Book(rest);
@@ -116,10 +109,7 @@ export class BookService {
 
       readingTime = calculateReadingTime(sessions);
       startReadingDate = findStartReadingDate(sessions);
-      endReadingDate =
-        data.status === BookStatus.Read
-          ? findEndReadingDate(sessions)
-          : undefined;
+      endReadingDate = data.status === BookStatus.Read ? findEndReadingDate(sessions) : undefined;
       readingPlaces = [...new Set(sessions.map((s) => s.readingPlace))];
       sinceStart = calculateSinceStart(findStartReadingDate(sessions), offset);
     }
@@ -166,26 +156,22 @@ export class BookService {
     book.endDate = null;
     book.userRating = null;
 
-    await Promise.all([
-      this.readCountRepository.save(readCount),
-      this.bookRepository.save(book),
-    ]);
+    await Promise.all([this.readCountRepository.save(readCount), this.bookRepository.save(book)]);
   }
 
   async getBookStatistics(params: StatisticsQueryParams) {
     const { userId } = params;
-    const [booksPerMonth, readDays, bookTypes, subData, averageHoursPerWeek] =
-      await Promise.all([
-        this.getBooksPerMonth(params),
-        this.getReadDays(params),
-        this.getBookType(params),
-        this.userRepository
-          .createQueryBuilder('user')
-          .select(['user.id', 'user.subscriptionType'])
-          .where('user.id = :userId', { userId })
-          .getOneOrFail(),
-        this.getAverageHoursPerWeek(params),
-      ]);
+    const [booksPerMonth, readDays, bookTypes, subData, averageHoursPerWeek] = await Promise.all([
+      this.getBooksPerMonth(params),
+      this.getReadDays(params),
+      this.getBookType(params),
+      this.userRepository
+        .createQueryBuilder('user')
+        .select(['user.id', 'user.subscriptionType'])
+        .where('user.id = :userId', { userId })
+        .getOneOrFail(),
+      this.getAverageHoursPerWeek(params),
+    ]);
 
     let readPlaces: Record<string, number> | undefined;
     let readSources: Record<string, number> | undefined;
@@ -194,14 +180,13 @@ export class BookService {
     let readGenres: Record<string, number> | undefined;
 
     if (subData.subscriptionType === SubscriptionType.Premium) {
-      [readPlaces, readSources, readRating, readLanguage, readGenres] =
-        await Promise.all([
-          this.getReadPlaces(params),
-          this.getReadSource(params),
-          this.getReadRating(params),
-          this.getReadLanguage(params),
-          this.getReadGenres(params),
-        ]);
+      [readPlaces, readSources, readRating, readLanguage, readGenres] = await Promise.all([
+        this.getReadPlaces(params),
+        this.getReadSource(params),
+        this.getReadRating(params),
+        this.getReadLanguage(params),
+        this.getReadGenres(params),
+      ]);
     }
 
     return {
@@ -244,9 +229,7 @@ export class BookService {
           `EXTRACT(YEAR FROM "count"."readDate"::TIMESTAMP - INTERVAL '${offset} minutes') = :year`,
           { year },
         )
-        .groupBy(
-          `TO_CHAR(count."readDate"::TIMESTAMP - INTERVAL '${offset} minutes', 'YYYY-MM')`,
-        )
+        .groupBy(`TO_CHAR(count."readDate"::TIMESTAMP - INTERVAL '${offset} minutes', 'YYYY-MM')`)
         .orderBy(
           `TO_CHAR(count."readDate"::TIMESTAMP - INTERVAL '${offset} minutes', 'YYYY-MM')`,
           'ASC',
@@ -270,9 +253,7 @@ export class BookService {
       result = Object.values(result);
     }
 
-    return result
-      ? formatBooksPerMonth(result)
-      : formatBooksPerMonth(booksPerMonth);
+    return result ? formatBooksPerMonth(result) : formatBooksPerMonth(booksPerMonth);
   }
 
   private async bookPerMonth(params: StatisticsQueryParams) {
@@ -290,9 +271,7 @@ export class BookService {
         `EXTRACT(YEAR FROM book."endDate"::TIMESTAMP - INTERVAL '${offset} minutes') = :year`,
         { year },
       )
-      .groupBy(
-        `TO_CHAR(book."endDate"::TIMESTAMP - INTERVAL '${offset} minutes', 'YYYY-MM')`,
-      )
+      .groupBy(`TO_CHAR(book."endDate"::TIMESTAMP - INTERVAL '${offset} minutes', 'YYYY-MM')`)
       .orderBy(
         `TO_CHAR(book."endDate"::TIMESTAMP - INTERVAL '${offset} minutes', 'YYYY-MM')`,
         'ASC',
@@ -467,9 +446,7 @@ export class BookService {
 
     const totalHours =
       totalTimes.totalReadingTime && totalTimes.totalPauseTime
-        ? +(+totalTimes.totalReadingTime - +totalTimes.totalPauseTime).toFixed(
-            0,
-          )
+        ? +(+totalTimes.totalReadingTime - +totalTimes.totalPauseTime).toFixed(0)
         : 0;
     return totalHours;
   }
