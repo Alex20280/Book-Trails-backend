@@ -22,6 +22,7 @@ import { BestCategoryModule } from './best-category/best-category.module';
 import { GenreModule } from './genre/genre.module';
 import { ReadCountModule } from './read-count/read-count.module';
 import { NotificationModule } from './notification/notification.module';
+import { AchievementModule } from './achievement/achievement.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { NotificationModule } from './notification/notification.module';
     GenreModule,
     ReadCountModule,
     NotificationModule,
+    AchievementModule,
   ],
   controllers: [AppController],
   providers: [
