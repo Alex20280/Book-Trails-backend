@@ -8,9 +8,11 @@ import { ReviewService } from '@/review/review.service';
 import { Review } from '@/review/entities/review.entity';
 import { User } from '@/user/entities/user.entity';
 import { NotificationService } from '@/notification/notification.service';
+import { ReadCount } from '@/read-count/entities/read-count.entity';
+import { Achievement } from '@/achievement/entities/achievement.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([BookSession, Book, Review, User])],
+  imports: [TypeOrmModule.forFeature([BookSession, Book, Review, User, ReadCount, Achievement])],
   controllers: [BookSessionController],
   providers: [BookSessionService, ReviewService, NotificationService],
 })

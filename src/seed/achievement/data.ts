@@ -1,4 +1,4 @@
-import { AchievementName } from './enum';
+import { AchievementName } from '@/common/enums/ach.enum';
 
 export const achievements = [
   {

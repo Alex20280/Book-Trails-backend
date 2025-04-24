@@ -1,0 +1,28 @@
+import { AchievementName } from '../enums/ach.enum';
+
+export const bookCountAchMap: Record<number, AchievementName> = {
+  1: AchievementName.Read1Books,
+  3: AchievementName.Read3Books,
+  5: AchievementName.Read5Books,
+  10: AchievementName.Read10Books,
+  15: AchievementName.Read15Books,
+  20: AchievementName.Read20Books,
+  25: AchievementName.Read25Books,
+  30: AchievementName.Read30Books,
+  35: AchievementName.Read35Books,
+  40: AchievementName.Read40Books,
+  45: AchievementName.Read45Books,
+  50: AchievementName.Read50Books,
+  55: AchievementName.Read55Books,
+  60: AchievementName.Read60Books,
+  65: AchievementName.Read65Books,
+  70: AchievementName.Read70Books,
+  75: AchievementName.Read75Books,
+  80: AchievementName.Read80Books,
+  85: AchievementName.Read85Books,
+  90: AchievementName.Read90Books,
+  95: AchievementName.Read95Books,
+  100: AchievementName.Read100Books,
+  150: AchievementName.Read150Books,
+  200: AchievementName.Read200Books,
+};

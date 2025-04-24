@@ -22,29 +22,20 @@ export class NotificationService {
             channelId: 'default',
           },
         },
-        apns: {
-          headers: {
-            'apns-priority': '10',
-          },
-          payload: {
-            aps: {
-              contentAvailable: true,
-              sound: 'default',
-            },
-          },
-        },
       });
 
-      this.logger.log('✅ Повідомлення успішно відправлено! Response ID:', response);
+      this.logger.log('✅ The message has been successfully sent! Response ID:', response);
       return {
         success: true,
         messageId: response,
       };
     } catch (error) {
-      this.logger.error('❌ Помилка при надсиланні повідомлення:', error);
+      this.logger.error('❌ Error sending a message:', error);
 
       if (error.code === 'messaging/registration-token-not-registered') {
-        this.logger.warn('⚠️ Токен більше не дійсний. Його слід видалити з бази.');
+        this.logger.warn(
+          '⚠️ The token is no longer valid. It should be removed from the database.',
+        );
       }
 
       return {
@@ -54,13 +45,14 @@ export class NotificationService {
     }
   }
 
-  async sendLegacyBookMilestone(deviceId: string, legacyCount: number) {
+  async sendLegacyBookMilestone(deviceId: string, currentCount: number) {
     try {
       const response = await firebase.messaging().send({
         notification: {
-          title: 'Вітаємо 🎉',
-          body: `Це вже твоя ${legacyCount}-а завершена книжка! Так тримати 💪`,
+          title: 'Congratulations 🎉',
+          body: `This is your ${currentCount}th completed book! Keep it up 💪`,
         },
+
         token: deviceId,
         android: {
           priority: 'high',
@@ -69,29 +61,18 @@ export class NotificationService {
             channelId: 'default',
           },
         },
-        apns: {
-          headers: {
-            'apns-priority': '10',
-          },
-          payload: {
-            aps: {
-              contentAvailable: true,
-              sound: 'default',
-            },
-          },
-        },
       });
 
-      this.logger.log(`✅ Legacy milestone нотифікація надіслана. Response ID: ${response}`);
+      this.logger.log(`✅ Legacy milestone notification sent. Response ID: ${response}`);
       return {
         success: true,
         messageId: response,
       };
     } catch (error) {
-      this.logger.error('❌ Помилка при надсиланні legacy milestone нотифікації:', error);
+      this.logger.error('❌ Error sending the legacy milestone notification:', error);
 
       if (error.code === 'messaging/registration-token-not-registered') {
-        this.logger.warn('⚠️ Недійсний firebase token. Видалити з бази.');
+        this.logger.warn('⚠️ Invalid firebase token. Remove from the database.');
       }
 
       return {

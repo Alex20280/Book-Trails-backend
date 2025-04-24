@@ -1,4 +1,4 @@
-import { AchievementName } from '@/seed/achievement/enum';
+import { AchievementName } from '@/common/enums/ach.enum';
 import { User } from '@/user/entities/user.entity';
 import { Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
 

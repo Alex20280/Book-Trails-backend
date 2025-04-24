@@ -152,7 +152,7 @@ export class BookService {
     readCount.readDate = book.endDate;
     readCount.userRating = book.userRating;
 
-    book.status = BookStatus.Reading;
+    book.status = BookStatus.ToRead;
     book.endDate = null;
     book.userRating = null;
 

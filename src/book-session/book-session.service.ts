@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 
 import { BookSession } from './entities/book-session.entity';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, EntityManager } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Book } from '@/book/entities/book.entity';
 import {
@@ -13,6 +13,11 @@ import { BookStatus } from '@/common/enums/book.enum';
 import { ReviewService } from '../review/review.service';
 import { User } from '@/user/entities/user.entity';
 import { NotificationService } from '@/notification/notification.service';
+import { ReadCount } from '@/read-count/entities/read-count.entity';
+import { Achievement } from '@/achievement/entities/achievement.entity';
+import { AchievementName } from '@/common/enums/ach.enum';
+import { achievements } from '../seed/achievement/data';
+import { bookCountAchMap } from '@/common/helpers/book-count-ach';
 
 @Injectable()
 export class BookSessionService {
@@ -23,6 +28,10 @@ export class BookSessionService {
     readonly bookRepository: Repository<Book>,
     @InjectRepository(User)
     readonly userRepository: Repository<User>,
+    @InjectRepository(ReadCount)
+    readonly readCountRepository: Repository<ReadCount>,
+    @InjectRepository(Achievement)
+    readonly achRepository: Repository<Achievement>,
     readonly notificationService: NotificationService,
     readonly reviewService: ReviewService,
     readonly dataSource: DataSource,
@@ -113,25 +122,11 @@ export class BookSessionService {
 
       const endDate = new Date().toISOString();
 
-      const [book, { user, legacyBookCount }, bookSession, newReview] = await Promise.all([
+      const [book, bookSession, newReview, readBookCount, totalReadCount] = await Promise.all([
         manager.findOneOrFail(Book, {
           where: { id: bookId },
           select: ['id', 'pages'],
         }),
-
-        manager
-          .createQueryBuilder(User, 'user')
-          .leftJoin('user.books', 'book', 'book.isLegacy = true')
-          .select(['user.id', 'user.firebaseDeviceId'])
-          .addSelect('COUNT(book.id)', 'legacyBookCount')
-          .where('user.id = :userId', { userId })
-          .groupBy('user.id')
-          .addGroupBy('user.firebaseDeviceId')
-          .getRawAndEntities()
-          .then(({ entities: [user], raw: [raw] }) => ({
-            user,
-            legacyBookCount: Number(raw.legacyBookCount),
-          })),
 
         manager.findOneOrFail(BookSession, {
           where: {
@@ -141,20 +136,26 @@ export class BookSessionService {
         }),
 
         review ? this.reviewService.create({ text: review }, manager) : null,
+
+        manager
+          .createQueryBuilder(Book, 'book')
+          .where('book.status = :status', { status: 'read' })
+          .andWhere('book.userId = :userId', { userId })
+          .getCount(),
+
+        manager
+          .createQueryBuilder(ReadCount, 'rc')
+          .innerJoin('rc.book', 'book')
+          .where('book.userId = :userId', { userId })
+          .getCount(),
       ]);
 
       if (currentPage > book.pages) {
         throw new BadRequestException('Current page cannot be greater than total pages');
       }
+      const currentCount = +readBookCount + +totalReadCount + 1;
 
-      const firebaseDeviceId = user.firebaseDeviceId;
-
-      if (legacyBookCount + 1 === 1) {
-        await this.notificationService.sendLegacyBookMilestone(
-          firebaseDeviceId,
-          legacyBookCount + 1,
-        );
-      }
+      await this.checkAndAssignBookAchievement(userId, currentCount, manager);
 
       bookSession.currentPage = currentPage;
       bookSession.endDate = endDate;
@@ -178,5 +179,34 @@ export class BookSessionService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  private async checkAndAssignBookAchievement(
+    userId: number,
+    currentCount: number,
+    manager: EntityManager,
+  ): Promise<void> {
+    const milestoneCounts = new Set(Object.keys(bookCountAchMap).map(Number));
+
+    if (!milestoneCounts.has(currentCount)) return;
+
+    const achievementName = bookCountAchMap[currentCount];
+
+    const [user, achievement] = await Promise.all([
+      manager.findOneOrFail(User, {
+        where: { id: userId },
+        relations: ['achievements'],
+      }),
+      manager.findOneOrFail(Achievement, {
+        where: { name: achievementName },
+      }),
+    ]);
+
+    user.achievements.push(achievement);
+
+    await Promise.all([
+      this.notificationService.sendLegacyBookMilestone(user.firebaseDeviceId, currentCount),
+      manager.save(User, user),
+    ]);
   }
 }

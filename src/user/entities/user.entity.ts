@@ -97,7 +97,7 @@ export class User {
   @OneToMany(() => Book, (book) => book.user)
   books: Book[];
 
-  @ManyToMany(() => Achievement, (achievement) => achievement.users)
+  @ManyToMany(() => Achievement, (achievement) => achievement.users, { eager: true })
   @JoinTable({ name: 'ach_to_user' })
   achievements: Achievement[];
 
