@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { SendNotificationDto } from './dto/send-notification.dto';
 import * as firebase from 'firebase-admin';
+import { BookType } from '@/common/enums/book.enum';
 
 @Injectable()
 export class NotificationService {
@@ -73,6 +74,52 @@ export class NotificationService {
 
       if (error.code === 'messaging/registration-token-not-registered') {
         this.logger.warn('⚠️ Invalid firebase token. Remove from the database.');
+      }
+
+      return {
+        success: false,
+        error: error.message || 'Unknown error',
+      };
+    }
+  }
+
+  async sendFirstBookTypeMilestone(deviceId: string, bookType: BookType) {
+    const typeToLabel: Record<BookType, string> = {
+      [BookType.Audio]: 'audiobook',
+      [BookType.EBook]: 'eBook',
+      [BookType.Soft]: 'paper book',
+    };
+
+    const readableType = typeToLabel[bookType] || 'book';
+
+    try {
+      const response = await firebase.messaging().send({
+        notification: {
+          title: '🎉 Milestone Reached!',
+          body: `You've completed your first ${readableType}! Keep going 🚀`,
+        },
+        token: deviceId,
+        android: {
+          priority: 'high',
+          notification: {
+            sound: 'default',
+            channelId: 'default',
+          },
+        },
+      });
+
+      this.logger.log(
+        `✅ First ${readableType} milestone notification sent. Response ID: ${response}`,
+      );
+      return {
+        success: true,
+        messageId: response,
+      };
+    } catch (error) {
+      this.logger.error('❌ Error sending the first book type milestone notification:', error);
+
+      if (error.code === 'messaging/registration-token-not-registered') {
+        this.logger.warn('⚠️ Invalid firebase token. Consider removing from DB.');
       }
 
       return {

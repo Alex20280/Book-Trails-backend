@@ -9,14 +9,13 @@ import {
   FinishBook,
   UpdateBookSession,
 } from '@/common/interfaces/book.session.service.interfaces';
-import { BookStatus } from '@/common/enums/book.enum';
+import { BookStatus, BookType } from '@/common/enums/book.enum';
 import { ReviewService } from '../review/review.service';
 import { User } from '@/user/entities/user.entity';
 import { NotificationService } from '@/notification/notification.service';
 import { ReadCount } from '@/read-count/entities/read-count.entity';
 import { Achievement } from '@/achievement/entities/achievement.entity';
 import { AchievementName } from '@/common/enums/ach.enum';
-import { achievements } from '../seed/achievement/data';
 import { bookCountAchMap } from '@/common/helpers/book-count-ach';
 
 @Injectable()
@@ -125,7 +124,7 @@ export class BookSessionService {
       const [book, bookSession, newReview, readBookCount, totalReadCount] = await Promise.all([
         manager.findOneOrFail(Book, {
           where: { id: bookId },
-          select: ['id', 'pages'],
+          select: ['id', 'pages', 'type'],
         }),
 
         manager.findOneOrFail(BookSession, {
@@ -150,8 +149,8 @@ export class BookSessionService {
           .getCount(),
       ]);
 
-      if (currentPage > book.pages) {
-        throw new BadRequestException('Current page cannot be greater than total pages');
+      if (currentPage !== book.pages) {
+        throw new BadRequestException('Current page cannot be greater or lower than total pages');
       }
       const currentCount = +readBookCount + +totalReadCount + 1;
 
@@ -172,6 +171,11 @@ export class BookSessionService {
       await Promise.all([manager.save(BookSession, bookSession), manager.save(Book, book)]);
 
       await queryRunner.commitTransaction();
+
+      if ([BookType.Audio, BookType.EBook].includes(book.type)) {
+        await this.typeBookAchievement(userId, book.type);
+      }
+
       return true;
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -208,5 +212,57 @@ export class BookSessionService {
       this.notificationService.sendLegacyBookMilestone(user.firebaseDeviceId, currentCount),
       manager.save(User, user),
     ]);
+  }
+
+  private async typeBookAchievement(userId: number, bookType: BookType) {
+    const [bookCount, readCount] = await Promise.all([
+      this.bookRepository
+        .createQueryBuilder('book')
+        .where('book.userId = :userId', { userId })
+        .andWhere('book.type = :type', { type: bookType })
+        .andWhere('book.status = :status', { status: BookStatus.Read })
+        .getCount(),
+
+      this.readCountRepository
+        .createQueryBuilder('rc')
+        .innerJoin('rc.book', 'book')
+        .where('book.userId = :userId', { userId })
+        .andWhere('book.type = :type', { type: bookType })
+        .getCount(),
+    ]);
+
+    const totalCount = bookCount + readCount;
+
+    if (totalCount === 1) {
+      const typeToAchievementMap: Record<BookType, AchievementName | null> = {
+        [BookType.Audio]: AchievementName.Audiobook,
+        [BookType.EBook]: AchievementName.EBook,
+        [BookType.Soft]: null,
+      };
+
+      const achievementName = typeToAchievementMap[bookType];
+
+      if (achievementName) {
+        const [user, achievement] = await Promise.all([
+          this.userRepository.findOneOrFail({
+            where: { id: userId },
+            select: ['id', 'firebaseDeviceId'],
+            relations: ['achievements'],
+          }),
+          this.achRepository.findOne({
+            where: { name: achievementName },
+            select: ['id'],
+          }),
+        ]);
+
+        if (achievement && !user.achievements.some((a) => a.id === achievement.id)) {
+          user.achievements.push(achievement);
+          await Promise.all([
+            this.userRepository.save(user),
+            this.notificationService.sendFirstBookTypeMilestone(user.firebaseDeviceId, bookType),
+          ]);
+        }
+      }
+    }
   }
 }

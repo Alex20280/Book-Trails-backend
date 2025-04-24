@@ -51,7 +51,7 @@ export class BookService {
       const { secure_url } = await this.cloudinaryService.uploadFile(image);
       newBook.image = secure_url;
     }
-    console.log('object :>> ', await this.bookRepository.save(newBook));
+
     return await this.bookRepository.save(newBook);
   }
 

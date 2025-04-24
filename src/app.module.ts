@@ -23,6 +23,8 @@ import { GenreModule } from './genre/genre.module';
 import { ReadCountModule } from './read-count/read-count.module';
 import { NotificationModule } from './notification/notification.module';
 import { AchievementModule } from './achievement/achievement.module';
+import { CacheModule } from '@nestjs/cache-manager';
+import * as redisStore from 'cache-manager-ioredis';
 
 @Module({
   imports: [
@@ -30,6 +32,19 @@ import { AchievementModule } from './achievement/achievement.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    CacheModule.registerAsync({
+      isGlobal: true,
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        store: redisStore,
+        host: configService.get<string>('REDIS_HOST'),
+        port: configService.get<number>('REDIS_PORT'),
+        ttl: configService.get<number>('REDIS_TTL') || 15,
+        password: configService.get<string>('REDIS_PASSWORD'),
+      }),
+    }),
+
     TypeOrmModule.forRootAsync({
       useFactory: async (configService: ConfigService) => {
         return dataSourceOptions(configService);

@@ -10,6 +10,8 @@ import { User } from '@/user/entities/user.entity';
 import { NotificationService } from '@/notification/notification.service';
 import { ReadCount } from '@/read-count/entities/read-count.entity';
 import { Achievement } from '@/achievement/entities/achievement.entity';
+import { BullModule } from '@nestjs/bull';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 
 @Module({
   imports: [TypeOrmModule.forFeature([BookSession, Book, Review, User, ReadCount, Achievement])],

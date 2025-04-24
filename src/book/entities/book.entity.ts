@@ -63,7 +63,7 @@ export class Book {
     enum: BookType,
     default: BookType.Soft,
   })
-  type: Source;
+  type: BookType;
 
   @Column({ default: false })
   isLegacy: boolean;
