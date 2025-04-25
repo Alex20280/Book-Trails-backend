@@ -153,8 +153,11 @@ export class BookSessionService {
         throw new BadRequestException('Current page cannot be greater or lower than total pages');
       }
       const currentCount = +readBookCount + +totalReadCount + 1;
+      const milestoneCounts = new Set(Object.keys(bookCountAchMap).map(Number));
 
-      await this.checkAndAssignBookAchievement(userId, currentCount, manager);
+      if (milestoneCounts.has(currentCount)) {
+        await this.checkAndAssignBookAchievement(userId, currentCount, manager);
+      }
 
       bookSession.currentPage = currentPage;
       bookSession.endDate = endDate;
@@ -190,10 +193,6 @@ export class BookSessionService {
     currentCount: number,
     manager: EntityManager,
   ): Promise<void> {
-    const milestoneCounts = new Set(Object.keys(bookCountAchMap).map(Number));
-
-    if (!milestoneCounts.has(currentCount)) return;
-
     const achievementName = bookCountAchMap[currentCount];
 
     const [user, achievement] = await Promise.all([
