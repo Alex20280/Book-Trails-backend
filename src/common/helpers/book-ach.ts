@@ -1,4 +1,5 @@
 import { AchievementName } from '../enums/ach.enum';
+import { ReadingPlace } from '../enums/book.enum';
 
 export const bookCountAchMap: Record<number, AchievementName> = {
   1: AchievementName.Read1Books,
@@ -25,4 +26,15 @@ export const bookCountAchMap: Record<number, AchievementName> = {
   100: AchievementName.Read100Books,
   150: AchievementName.Read150Books,
   200: AchievementName.Read200Books,
+};
+
+export const bookLocationAchMap: Partial<Record<ReadingPlace, AchievementName>> = {
+  [ReadingPlace.Library]: AchievementName.BookInTheLibrary,
+  [ReadingPlace.Home]: AchievementName.BookAtHome,
+  [ReadingPlace.Work]: AchievementName.BookAtWork,
+  [ReadingPlace.CafeRestaurant]: AchievementName.BookInACafe,
+  [ReadingPlace.School]: AchievementName.BookInEducationInstitution,
+  [ReadingPlace.Nature]: AchievementName.BookInNature,
+  [ReadingPlace.Transport]: AchievementName.BookInTransport,
+  [ReadingPlace.WaitingRoom]: AchievementName.BookOnTheRoad,
 };

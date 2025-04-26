@@ -1,7 +1,12 @@
-import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { BookSession } from './entities/book-session.entity';
-import { Repository, DataSource, EntityManager } from 'typeorm';
+import { Repository, DataSource, EntityManager, DeepPartial } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Book } from '@/book/entities/book.entity';
 import {
@@ -9,14 +14,15 @@ import {
   FinishBook,
   UpdateBookSession,
 } from '@/common/interfaces/book.session.service.interfaces';
-import { BookStatus, BookType } from '@/common/enums/book.enum';
+import { BookStatus, BookType, ReadingPlace } from '@/common/enums/book.enum';
 import { ReviewService } from '../review/review.service';
 import { User } from '@/user/entities/user.entity';
 import { NotificationService } from '@/notification/notification.service';
 import { ReadCount } from '@/read-count/entities/read-count.entity';
 import { Achievement } from '@/achievement/entities/achievement.entity';
 import { AchievementName } from '@/common/enums/ach.enum';
-import { bookCountAchMap } from '@/common/helpers/book-count-ach';
+import { bookCountAchMap, bookLocationAchMap } from '@/common/helpers/book-ach';
+import { Review } from '@/review/entities/review.entity';
 
 @Injectable()
 export class BookSessionService {
@@ -35,6 +41,13 @@ export class BookSessionService {
     readonly reviewService: ReviewService,
     readonly dataSource: DataSource,
   ) {}
+
+  private readonly milestoneCounts = new Set(Object.keys(bookCountAchMap).map(Number));
+  private readonly typeToAchievementMap: Record<BookType, AchievementName | null> = {
+    [BookType.Audio]: AchievementName.Audiobook,
+    [BookType.EBook]: AchievementName.EBook,
+    [BookType.Soft]: null,
+  };
 
   async create(payload: CreateBookSession): Promise<BookSession> {
     const { userId, bookId, readingPlace } = payload;
@@ -104,7 +117,7 @@ export class BookSessionService {
     }
   }
 
-  async finishTheBook(payload: FinishBook): Promise<boolean> {
+  async finishTheBook(payload: FinishBook) {
     const {
       userId,
       bookId,
@@ -119,65 +132,194 @@ export class BookSessionService {
     try {
       const manager = queryRunner.manager;
 
-      const endDate = new Date().toISOString();
-
-      const [book, bookSession, newReview, readBookCount, totalReadCount] = await Promise.all([
-        manager.findOneOrFail(Book, {
-          where: { id: bookId },
-          select: ['id', 'pages', 'type'],
-        }),
-
-        manager.findOneOrFail(BookSession, {
-          where: {
-            id: bookSessionId,
-            book: { id: bookId, user: { id: userId } },
-          },
-        }),
-
-        review ? this.reviewService.create({ text: review }, manager) : null,
+      const [session, book] = await Promise.all([
+        manager
+          .createQueryBuilder(BookSession, 'session')
+          .select(['session.id', 'session.readingPlace'])
+          .where('session.id = :bookSessionId', { bookSessionId })
+          .andWhere('session.bookId = :bookId', { bookId })
+          .getOne(),
 
         manager
           .createQueryBuilder(Book, 'book')
-          .where('book.status = :status', { status: 'read' })
-          .andWhere('book.userId = :userId', { userId })
-          .getCount(),
-
-        manager
-          .createQueryBuilder(ReadCount, 'rc')
-          .innerJoin('rc.book', 'book')
-          .where('book.userId = :userId', { userId })
-          .getCount(),
+          .leftJoin('book.genres', 'genre')
+          .select(['book.id', 'book.pages', 'book.type', 'book.author', 'genre.id', 'genre.name'])
+          .where('book.id = :bookId', { bookId })
+          .getOne(),
       ]);
 
-      if (currentPage !== book.pages) {
-        throw new BadRequestException('Current page cannot be greater or lower than total pages');
-      }
-      const currentCount = +readBookCount + +totalReadCount + 1;
-      const milestoneCounts = new Set(Object.keys(bookCountAchMap).map(Number));
-
-      if (milestoneCounts.has(currentCount)) {
-        await this.checkAndAssignBookAchievement(userId, currentCount, manager);
+      if (!session) {
+        throw new NotFoundException('Book session not found');
       }
 
-      bookSession.currentPage = currentPage;
-      bookSession.endDate = endDate;
-
-      book.userRating = stars;
-      book.status = BookStatus.Read;
-      book.endDate = endDate;
-      book.isLegacy = true;
-
-      if (newReview) {
-        book.reviews.push(newReview);
+      if (book.pages !== currentPage) {
+        throw new BadRequestException('Current page is not equal to book pages');
       }
 
-      await Promise.all([manager.save(BookSession, bookSession), manager.save(Book, book)]);
+      const query = manager
+        .createQueryBuilder(User, 'user')
+        .leftJoin('user.achievements', 'ach')
+        .loadRelationCountAndMap('user.booksByOneAuthor', 'user.books', 'book', (qb) =>
+          qb
+            .where('book.author = :author', { author: book.author })
+            .andWhere('book.endDate IS NOT NULL')
+            .andWhere('book.id != :currentBookId', { currentBookId: bookId }),
+        )
+        .loadRelationCountAndMap('user.booksByOneGenre', 'user.books', 'book', (qb) =>
+          qb
+            .innerJoin('book.genres', 'genre')
+            .where('genre.id IN (:...genreIds)', {
+              genreIds: book.genres.map((g) => g.id),
+            })
+            .andWhere('book.endDate IS NOT NULL')
+            .andWhere('book.id != :currentBookId', { currentBookId: bookId }),
+        )
+        .select(['user.id', 'user.readBookCount', 'user.firebaseDeviceId', 'ach.id', 'ach.name'])
+        .where('user.id = :userId', { userId });
+
+      const hasHorrorGenre = book.genres.some((g) => g.name.toLowerCase() === 'horror');
+
+      if (hasHorrorGenre) {
+        query.loadRelationCountAndMap('user.booksHorrorCount', 'user.books', 'book', (qb) =>
+          qb
+            .innerJoin('book.genres', 'genre')
+            .where('genre.name = :genreName', { genreName: 'horror' })
+            .andWhere('book.endDate IS NOT NULL')
+            .andWhere('book.id != :currentBookId', { currentBookId: bookId }),
+        );
+      }
+
+      const endDate = new Date().toISOString();
+
+      const [user] = await Promise.all([
+        await query.getOneOrFail(),
+
+        manager
+          .createQueryBuilder()
+          .update(BookSession)
+          .set({
+            ...(currentPage !== undefined && { currentPage }),
+            endDate,
+          })
+          .where('id = :bookSessionId', { bookSessionId })
+          .andWhere('bookId = :bookId', { bookId })
+          .execute(),
+
+        manager
+          .createQueryBuilder()
+          .update(Book)
+          .set({
+            ...(stars !== undefined && {
+              userRating: stars,
+              status: BookStatus.Read,
+              endDate,
+              isLegacy: true,
+            }),
+          })
+          .where('id = :bookId', { bookId })
+          .andWhere('userId = :userId', { userId })
+          .execute(),
+
+        review
+          ? manager
+              .createQueryBuilder()
+              .insert()
+              .into(Review)
+              .values({
+                text: review,
+                book: { id: bookId },
+              })
+              .execute()
+          : null,
+      ]);
+
+      const extendedUser = user as User & {
+        booksByOneAuthor: number;
+        booksByOneGenre: number;
+        booksHorrorCount: number;
+      };
+
+      const achNames = user.achievements.map((a) => a.name);
+
+      const tasks: Promise<any>[] = [];
+
+      const currentCount = user.readBookCount + 1;
+
+      const bookCountAchievementName = bookCountAchMap[currentCount];
+
+      if (this.milestoneCounts.has(currentCount) && !achNames.includes(bookCountAchievementName)) {
+        tasks.push(this.bookCountAchievement(user, currentCount, manager));
+      }
+
+      if (book.pages >= 1000 && !achNames.includes(AchievementName.Book1000Pages)) {
+        const bigBooksCount = await manager
+          .createQueryBuilder(Book, 'book')
+          .where('book.userId = :userId', { userId: user.id })
+          .andWhere('book.endDate IS NOT NULL')
+          .andWhere('book.pages >= 1000')
+          .andWhere('book.id != :currentBookId', { currentBookId: bookId })
+          .getCount();
+
+        if (bigBooksCount === 0) {
+          tasks.push(this.bigBookAchievement(user, manager));
+        }
+      }
+
+      const achievementName = this.typeToAchievementMap[book.type];
+
+      if (book.type !== BookType.Soft && !achNames.includes(achievementName)) {
+        const completedSoftBooksCount = await manager
+          .createQueryBuilder(Book, 'book')
+          .where('book.userId = :userId', { userId: user.id })
+          .andWhere('book.type = :type', { type: BookType.Soft })
+          .andWhere('book.id != :currentBookId', { currentBookId: bookId })
+          .andWhere('book.endDate IS NOT NULL')
+          .getCount();
+
+        if (completedSoftBooksCount === 0) {
+          tasks.push(this.typeBookAchievement(user, book.type, manager));
+        }
+      }
+
+      const locationAchievementName = bookLocationAchMap[session.readingPlace as ReadingPlace];
+
+      if (locationAchievementName && !achNames.includes(locationAchievementName)) {
+        const completedSessionsCount = await manager
+          .createQueryBuilder(BookSession, 'session')
+          .where('session.readingPlace = :readingPlace', {
+            readingPlace: session.readingPlace,
+          })
+          .andWhere('session.endDate IS NOT NULL')
+          .andWhere('session.id != :currentSessionId', { currentSessionId: session.id })
+          .getCount();
+
+        if (completedSessionsCount === 0) {
+          tasks.push(this.bookLocationAchievement(user, locationAchievementName, manager));
+        }
+      }
+
+      const achievementsToCheck = [
+        {
+          achievementName: AchievementName.ThreeBooksByOneAuthor,
+          condition: extendedUser.booksByOneAuthor === 2,
+        },
+        {
+          achievementName: AchievementName.ThreeHorrorBooks,
+          condition: hasHorrorGenre && extendedUser.booksHorrorCount === 2,
+        },
+        {
+          achievementName: AchievementName.ThreeBooksOfOneGenre,
+          condition: extendedUser.booksByOneGenre === 2,
+        },
+      ];
+
+      tasks.push(this.threeBooksAchievement(user, achievementsToCheck, manager));
+
+      await Promise.all(tasks);
+      user.readBookCount += 1;
+      await manager.save(User, user);
 
       await queryRunner.commitTransaction();
-
-      if ([BookType.Audio, BookType.EBook].includes(book.type)) {
-        await this.typeBookAchievement(userId, book.type);
-      }
 
       return true;
     } catch (error) {
@@ -188,80 +330,103 @@ export class BookSessionService {
     }
   }
 
-  private async checkAndAssignBookAchievement(
-    userId: number,
+  private async bookCountAchievement(
+    user: DeepPartial<User>,
     currentCount: number,
     manager: EntityManager,
   ): Promise<void> {
     const achievementName = bookCountAchMap[currentCount];
 
-    const [user, achievement] = await Promise.all([
-      manager.findOneOrFail(User, {
-        where: { id: userId },
-        relations: ['achievements'],
-      }),
-      manager.findOneOrFail(Achievement, {
-        where: { name: achievementName },
-      }),
-    ]);
+    const achievement = await manager.findOneOrFail(Achievement, {
+      where: { name: achievementName },
+      select: ['id'],
+    });
 
-    user.achievements.push(achievement);
-
-    await Promise.all([
-      this.notificationService.sendLegacyBookMilestone(user.firebaseDeviceId, currentCount),
-      manager.save(User, user),
-    ]);
+    if (!user.achievements.some((a) => a.id === achievement.id)) {
+      user.achievements.push(achievement);
+      await this.notificationService.sendCountAch(user.firebaseDeviceId, currentCount);
+    }
   }
 
-  private async typeBookAchievement(userId: number, bookType: BookType) {
-    const [bookCount, readCount] = await Promise.all([
-      this.bookRepository
-        .createQueryBuilder('book')
-        .where('book.userId = :userId', { userId })
-        .andWhere('book.type = :type', { type: bookType })
-        .andWhere('book.status = :status', { status: BookStatus.Read })
-        .getCount(),
+  private async bigBookAchievement(user: DeepPartial<User>, manager: EntityManager) {
+    const achievementName = AchievementName.Book1000Pages;
 
-      this.readCountRepository
-        .createQueryBuilder('rc')
-        .innerJoin('rc.book', 'book')
-        .where('book.userId = :userId', { userId })
-        .andWhere('book.type = :type', { type: bookType })
-        .getCount(),
-    ]);
+    const achievement = await manager.findOneOrFail(Achievement, {
+      where: { name: achievementName },
+      select: ['id'],
+    });
 
-    const totalCount = bookCount + readCount;
+    if (!user.achievements.some((a) => a.id === achievement.id)) {
+      user.achievements.push(achievement);
+      await this.notificationService.sendBigBookAch(user.firebaseDeviceId);
+    }
+  }
 
-    if (totalCount === 1) {
-      const typeToAchievementMap: Record<BookType, AchievementName | null> = {
-        [BookType.Audio]: AchievementName.Audiobook,
-        [BookType.EBook]: AchievementName.EBook,
-        [BookType.Soft]: null,
-      };
+  private async typeBookAchievement(
+    user: DeepPartial<User>,
+    bookType: BookType,
+    manager: EntityManager,
+  ): Promise<void> {
+    const typeToAchievementMap: Record<BookType, AchievementName | null> = {
+      [BookType.Audio]: AchievementName.Audiobook,
+      [BookType.EBook]: AchievementName.EBook,
+      [BookType.Soft]: null,
+    };
 
-      const achievementName = typeToAchievementMap[bookType];
+    const achievementName = typeToAchievementMap[bookType];
 
-      if (achievementName) {
-        const [user, achievement] = await Promise.all([
-          this.userRepository.findOneOrFail({
-            where: { id: userId },
-            select: ['id', 'firebaseDeviceId'],
-            relations: ['achievements'],
-          }),
-          this.achRepository.findOne({
-            where: { name: achievementName },
-            select: ['id'],
-          }),
-        ]);
+    if (achievementName) {
+      const achievement = await manager.findOneOrFail(Achievement, {
+        where: { name: achievementName },
+        select: ['id'],
+      });
 
-        if (achievement && !user.achievements.some((a) => a.id === achievement.id)) {
-          user.achievements.push(achievement);
-          await Promise.all([
-            this.userRepository.save(user),
-            this.notificationService.sendFirstBookTypeMilestone(user.firebaseDeviceId, bookType),
-          ]);
-        }
+      if (!user.achievements.some((a) => a.id === achievement.id)) {
+        user.achievements.push(achievement);
+        await this.notificationService.sendFirstBookTypeAch(user.firebaseDeviceId, bookType);
       }
     }
+  }
+
+  private async bookLocationAchievement(
+    user: DeepPartial<User>,
+    achName: AchievementName,
+    manager: EntityManager,
+  ) {
+    const achievement = await manager.findOneOrFail(Achievement, {
+      where: { name: achName },
+      select: ['id'],
+    });
+
+    if (!user.achievements.some((a) => a.id === achievement.id)) {
+      user.achievements.push(achievement);
+      await this.notificationService.sendFirstPlaceAch(user.firebaseDeviceId, achName);
+    }
+  }
+
+  private async threeBooksAchievement(
+    user: DeepPartial<User>,
+    achievements: { achievementName: AchievementName; condition: boolean }[],
+    manager: EntityManager,
+  ) {
+    const achNames = user.achievements.map((a) => a.name);
+
+    const tasks = achievements.map(async ({ achievementName, condition }) => {
+      if (achNames.includes(achievementName) || !condition) {
+        return;
+      }
+
+      const achievement = await manager.findOneOrFail(Achievement, {
+        where: { name: achievementName },
+        select: ['id'],
+      });
+      user.achievements.push(achievement);
+      await this.notificationService.sendThreeBooksAchievement(
+        user.firebaseDeviceId,
+        achievementName,
+      );
+    });
+
+    await Promise.all(tasks);
   }
 }

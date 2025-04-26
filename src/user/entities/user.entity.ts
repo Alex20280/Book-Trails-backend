@@ -71,6 +71,9 @@ export class User {
   @Column({ nullable: true, default: false })
   isSubscribe: boolean;
 
+  @Column({ nullable: false, default: 0 })
+  readBookCount: number;
+
   @Exclude()
   @Column()
   createdAt: string;
