@@ -266,4 +266,134 @@ export class NotificationService {
       };
     }
   }
+
+  async sendReadBookInOneDayAch(deviceId: string, achName: AchievementName) {
+    const readableNames: Partial<Record<AchievementName, string>> = {
+      [AchievementName.BookReadInOneDay]: 'Read a book in one day',
+    };
+
+    const readableAchievement = readableNames[achName] || 'Great Achievement';
+
+    try {
+      const response = await firebase.messaging().send({
+        notification: {
+          title: '🎯 New Achievement!',
+          body: `${readableAchievement}! Keep it up 🚀`,
+        },
+        token: deviceId,
+        android: {
+          priority: 'high',
+          notification: {
+            sound: 'default',
+            channelId: 'default',
+          },
+        },
+      });
+
+      this.logger.log(
+        `✅ Read Book in One Day Achievement notification sent. Response ID: ${response}`,
+      );
+      return {
+        success: true,
+        messageId: response,
+      };
+    } catch (error) {
+      this.logger.error('❌ Error sending Read Book in One Day Achievement notification:', error);
+
+      if (error.code === 'messaging/registration-token-not-registered') {
+        this.logger.warn('⚠️ Invalid firebase token. Should remove from DB.');
+      }
+
+      return {
+        success: false,
+        error: error.message || 'Unknown error',
+      };
+    }
+  }
+
+  async friendBookAch(deviceId: string, achName: AchievementName) {
+    const readableNames: Partial<Record<AchievementName, string>> = {
+      [AchievementName.FriendBook]: 'Friend Book',
+    };
+
+    const friendBookAchievement = readableNames[achName] || 'Great Achievement';
+
+    try {
+      const response = await firebase.messaging().send({
+        notification: {
+          title: '🎯 New Achievement!',
+          body: `${friendBookAchievement}! Keep it up 🚀`,
+        },
+        token: deviceId,
+        android: {
+          priority: 'high',
+          notification: {
+            sound: 'default',
+            channelId: 'default',
+          },
+        },
+      });
+
+      this.logger.log(`✅ Friend book Achievement notification sent. Response ID: ${response}`);
+      return {
+        success: true,
+        messageId: response,
+      };
+    } catch (error) {
+      this.logger.error('❌ Error sending Read Book in One Day Achievement notification:', error);
+
+      if (error.code === 'messaging/registration-token-not-registered') {
+        this.logger.warn('⚠️ Invalid firebase token. Should remove from DB.');
+      }
+
+      return {
+        success: false,
+        error: error.message || 'Unknown error',
+      };
+    }
+  }
+
+  async nonStopThirtydaysAch(deviceId: string, achName: AchievementName) {
+    const readableNames: Partial<Record<AchievementName, string>> = {
+      [AchievementName.ReadNonStopThirtyDays]: 'Read non stop thirty days',
+    };
+
+    const nonStopThirtyDaysAchievement = readableNames[achName] || 'Great Achievement';
+
+    try {
+      const response = await firebase.messaging().send({
+        notification: {
+          title: '🎯 New Achievement!',
+          body: `${nonStopThirtyDaysAchievement}! Keep it up 🚀`,
+        },
+        token: deviceId,
+        android: {
+          priority: 'high',
+          notification: {
+            sound: 'default',
+            channelId: 'default',
+          },
+        },
+      });
+
+      this.logger.log(
+        `✅ Read non stop thirty days Achievement notification sent. Response ID: ${response}`,
+      );
+      return {
+        success: true,
+        messageId: response,
+      };
+    } catch (error) {
+      this.logger.error('❌ Read non stop thirty days Achievement notification:', error);
+
+      if (error.code === 'messaging/registration-token-not-registered') {
+        this.logger.warn('⚠️ Invalid firebase token. Should remove from DB.');
+      }
+
+      return {
+        success: false,
+        error: error.message || 'Unknown error',
+      };
+    }
+  }
 }

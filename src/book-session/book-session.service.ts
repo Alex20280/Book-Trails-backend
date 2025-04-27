@@ -14,7 +14,7 @@ import {
   FinishBook,
   UpdateBookSession,
 } from '@/common/interfaces/book.session.service.interfaces';
-import { BookStatus, BookType, ReadingPlace } from '@/common/enums/book.enum';
+import { BookStatus, BookType, ReadingPlace, Source } from '@/common/enums/book.enum';
 import { ReviewService } from '../review/review.service';
 import { User } from '@/user/entities/user.entity';
 import { NotificationService } from '@/notification/notification.service';
@@ -23,6 +23,9 @@ import { Achievement } from '@/achievement/entities/achievement.entity';
 import { AchievementName } from '@/common/enums/ach.enum';
 import { bookCountAchMap, bookLocationAchMap } from '@/common/helpers/book-ach';
 import { Review } from '@/review/entities/review.entity';
+import { Session } from '@/session/entities/session.entity';
+import { isSameDay } from '@/common/helpers/is.same.day';
+import { NonStopReadingService } from '@/non-stop-reading/non-stop-reading.service';
 
 @Injectable()
 export class BookSessionService {
@@ -39,6 +42,7 @@ export class BookSessionService {
     readonly achRepository: Repository<Achievement>,
     readonly notificationService: NotificationService,
     readonly reviewService: ReviewService,
+    readonly nonStopReadingService: NonStopReadingService,
     readonly dataSource: DataSource,
   ) {}
 
@@ -49,9 +53,16 @@ export class BookSessionService {
     [BookType.Soft]: null,
   };
 
-  async create(payload: CreateBookSession): Promise<BookSession> {
+  async create(payload: CreateBookSession) {
     const { userId, bookId, readingPlace } = payload;
+
     try {
+      const user = await this.userRepository.findOneOrFail({
+        where: { id: userId },
+        relations: ['achievements'],
+      });
+      const achNames = user.achievements.map((a) => a.name);
+
       const book = await this.bookRepository.findOneOrFail({
         where: { id: bookId, user: { id: userId } },
       });
@@ -65,10 +76,20 @@ export class BookSessionService {
       await this.bookRepository.update({ id: book.id }, { status: BookStatus.Reading });
 
       const newBookSession = new BookSession({ readingPlace });
-
       newBookSession.book = book;
 
-      return await this.bookSessionRepository.save(newBookSession);
+      const savedSession = await this.bookSessionRepository.save(newBookSession);
+
+      if (!achNames.includes(AchievementName.ReadNonStopThirtyDays)) {
+        const nonStopThirtyDays = await this.nonStopReadingService.nonStopManipulation(
+          user,
+          newBookSession.startDate,
+        );
+        if (nonStopThirtyDays) {
+          await this.nonStopThirtydaysAch(user, AchievementName.ReadNonStopThirtyDays);
+        }
+      }
+      return savedSession;
     } catch (error) {
       throw error;
     }
@@ -132,7 +153,7 @@ export class BookSessionService {
     try {
       const manager = queryRunner.manager;
 
-      const [session, book] = await Promise.all([
+      const [session, book, firstSession] = await Promise.all([
         manager
           .createQueryBuilder(BookSession, 'session')
           .select(['session.id', 'session.readingPlace'])
@@ -143,8 +164,24 @@ export class BookSessionService {
         manager
           .createQueryBuilder(Book, 'book')
           .leftJoin('book.genres', 'genre')
-          .select(['book.id', 'book.pages', 'book.type', 'book.author', 'genre.id', 'genre.name'])
+          .select([
+            'book.id',
+            'book.pages',
+            'book.type',
+            'book.author',
+            'genre.id',
+            'genre.name',
+            'book.source',
+          ])
           .where('book.id = :bookId', { bookId })
+          .getOne(),
+
+        manager
+          .createQueryBuilder(BookSession, 'firstSession')
+          .select(['firstSession.id', 'firstSession.startDate'])
+          .where('firstSession.bookId = :bookId', { bookId })
+          .orderBy('firstSession.startDate', 'ASC')
+          .limit(1)
           .getOne(),
       ]);
 
@@ -243,6 +280,17 @@ export class BookSessionService {
 
       const tasks: Promise<any>[] = [];
 
+      if (
+        isSameDay(firstSession.startDate, endDate) &&
+        !achNames.includes(AchievementName.BookReadInOneDay)
+      ) {
+        tasks.push(this.readBookInOneDayAch(user, AchievementName.BookReadInOneDay, manager));
+      }
+
+      if (book.source === Source.Borrowed && !achNames.includes(AchievementName.FriendBook)) {
+        tasks.push(this.friendBookAch(user, AchievementName.FriendBook, manager));
+      }
+
       const currentCount = user.readBookCount + 1;
 
       const bookCountAchievementName = bookCountAchMap[currentCount];
@@ -298,7 +346,7 @@ export class BookSessionService {
         }
       }
 
-      const achievementsToCheck = [
+      const achThreeToCheck = [
         {
           achievementName: AchievementName.ThreeBooksByOneAuthor,
           condition: extendedUser.booksByOneAuthor === 2,
@@ -313,7 +361,7 @@ export class BookSessionService {
         },
       ];
 
-      tasks.push(this.threeBooksAchievement(user, achievementsToCheck, manager));
+      tasks.push(this.threeBooksAchievement(user, achThreeToCheck, manager));
 
       await Promise.all(tasks);
       user.readBookCount += 1;
@@ -428,5 +476,50 @@ export class BookSessionService {
     });
 
     await Promise.all(tasks);
+  }
+
+  private async readBookInOneDayAch(
+    user: DeepPartial<User>,
+    achName: AchievementName,
+    manager: EntityManager,
+  ) {
+    const achievement = await manager.findOneOrFail(Achievement, {
+      where: { name: achName },
+      select: ['id'],
+    });
+
+    if (!user.achievements.some((a) => a.id === achievement.id)) {
+      user.achievements.push(achievement);
+      await this.notificationService.sendReadBookInOneDayAch(user.firebaseDeviceId, achName);
+    }
+  }
+
+  private async friendBookAch(
+    user: DeepPartial<User>,
+    achName: AchievementName,
+    manager: EntityManager,
+  ) {
+    const achievement = await manager.findOneOrFail(Achievement, {
+      where: { name: achName },
+      select: ['id'],
+    });
+
+    if (!user.achievements.some((a) => a.id === achievement.id)) {
+      user.achievements.push(achievement);
+      await this.notificationService.friendBookAch(user.firebaseDeviceId, achName);
+    }
+  }
+
+  private async nonStopThirtydaysAch(user: DeepPartial<User>, achName: AchievementName) {
+    const achievement = await this.achRepository.findOneOrFail({
+      where: { name: achName },
+      select: ['id'],
+    });
+
+    if (!user.achievements.some((a) => a.id === achievement.id)) {
+      user.achievements.push(achievement);
+      await this.userRepository.save(user);
+      await this.notificationService.nonStopThirtydaysAch(user.firebaseDeviceId, achName);
+    }
   }
 }

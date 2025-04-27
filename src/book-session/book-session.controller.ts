@@ -1,21 +1,7 @@
-import {
-  Controller,
-  Post,
-  Body,
-  Patch,
-  Param,
-  UseGuards,
-  HttpStatus,
-  Query,
-} from '@nestjs/common';
+import { Controller, Post, Body, Patch, Param, UseGuards, HttpStatus, Query } from '@nestjs/common';
 import { BookSessionService } from './book-session.service';
 import { UpdateBookSessionDto } from './dto/update-book-session.dto';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiQuery,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/auth/guards/jwt.auth.guard';
 import { UserDecorator } from '@/common/decorators/user.decorator';
 import { BookSession } from './entities/book-session.entity';
@@ -46,7 +32,7 @@ export class BookSessionController {
     @UserDecorator('id') userId: number,
     @Param('bookId') bookId: number,
     @Query('readingPlace') readingPlace: ReadingPlace,
-  ): Promise<BookSession> {
+  ) {
     return this.bookSessionService.create({ userId, bookId, readingPlace });
   }
 

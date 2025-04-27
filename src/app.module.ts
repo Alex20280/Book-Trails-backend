@@ -24,6 +24,7 @@ import { ReadCountModule } from './read-count/read-count.module';
 import { NotificationModule } from './notification/notification.module';
 import { AchievementModule } from './achievement/achievement.module';
 import { CacheModule } from '@nestjs/cache-manager';
+import { NonStopReadingModule } from './non-stop-reading/non-stop-reading.module';
 import * as redisStore from 'cache-manager-ioredis';
 
 @Module({
@@ -67,6 +68,7 @@ import * as redisStore from 'cache-manager-ioredis';
     ReadCountModule,
     NotificationModule,
     AchievementModule,
+    NonStopReadingModule,
   ],
   controllers: [AppController],
   providers: [

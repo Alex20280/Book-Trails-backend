@@ -7,6 +7,7 @@ import {
   JoinTable,
   ManyToMany,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { CreateUserDto } from '../dto/create-user.dto';
@@ -15,6 +16,7 @@ import { Role, SubscriptionType } from '@/common/enums/user.enum';
 import { Session } from '@/session/entities/session.entity';
 import { Book } from '@/book/entities/book.entity';
 import { Achievement } from '@/achievement/entities/achievement.entity';
+import { NonStopReading } from '@/non-stop-reading/entities/non-stop-reading.entity';
 
 @Entity()
 export class User {
@@ -103,6 +105,10 @@ export class User {
   @ManyToMany(() => Achievement, (achievement) => achievement.users, { eager: true })
   @JoinTable({ name: 'ach_to_user' })
   achievements: Achievement[];
+
+  @OneToOne(() => NonStopReading, (nonStopReading) => nonStopReading.user, { cascade: true })
+  @JoinColumn()
+  nonStopReading: NonStopReading;
 
   constructor(payload?: CreateUserDto) {
     if (!payload) return;

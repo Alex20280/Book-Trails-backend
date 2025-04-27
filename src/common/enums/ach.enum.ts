@@ -40,4 +40,5 @@ export enum AchievementName {
   EBook = 'e_book',
   FriendBook = 'friend_book',
   ReadNonStopThirtyDays = 'read_non_stop_thirty_days',
+  ReadBookInOneDay = 'ReadBookInOneDay',
 }
