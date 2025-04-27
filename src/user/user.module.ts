@@ -10,10 +10,11 @@ import { AuthService } from '@/auth/auth.service';
 import { JwtModule } from '@nestjs/jwt';
 import { CloudinaryService } from '@/cloudinary/cloudinary.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { NonStopReading } from '@/non-stop-reading/entities/non-stop-reading.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Session]),
+    TypeOrmModule.forFeature([User, Session, NonStopReading]),
     ConfigModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -25,12 +26,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     }),
   ],
   controllers: [UserController],
-  providers: [
-    UserService,
-    EmailService,
-    SessionService,
-    AuthService,
-    CloudinaryService,
-  ],
+  providers: [UserService, EmailService, SessionService, AuthService, CloudinaryService],
 })
 export class UserModule {}

@@ -9,10 +9,10 @@ export class NonStopReading {
   @Column({ default: 0 })
   nonStopDays: number;
 
-  @Column()
+  @Column({ default: null })
   lastReadDate: string;
 
-  @OneToOne(() => User, (user) => user.nonStopReading)
+  @OneToOne(() => User, (user) => user.nonStopReading, { onDelete: 'CASCADE' })
   @JoinColumn()
   user: User;
 }

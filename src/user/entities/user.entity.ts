@@ -102,12 +102,11 @@ export class User {
   @OneToMany(() => Book, (book) => book.user)
   books: Book[];
 
-  @ManyToMany(() => Achievement, (achievement) => achievement.users, { eager: true })
+  @ManyToMany(() => Achievement, (achievement) => achievement.users)
   @JoinTable({ name: 'ach_to_user' })
   achievements: Achievement[];
 
-  @OneToOne(() => NonStopReading, (nonStopReading) => nonStopReading.user, { cascade: true })
-  @JoinColumn()
+  @OneToOne(() => NonStopReading, (nonStopReading) => nonStopReading.user, { onDelete: 'CASCADE' })
   nonStopReading: NonStopReading;
 
   constructor(payload?: CreateUserDto) {

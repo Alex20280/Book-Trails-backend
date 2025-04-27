@@ -88,7 +88,6 @@ export class Book {
   bookSessions: BookSession[];
 
   @ManyToMany(() => Genre, (genre) => genre.books, { onDelete: 'CASCADE' })
-  @JoinTable({ name: 'book_to_genre' })
   genres: Genre[];
 
   @OneToMany(() => Review, (review) => review.book, { eager: true })

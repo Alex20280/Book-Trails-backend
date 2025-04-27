@@ -16,8 +16,7 @@ export class Achievement {
   @Column()
   image: string;
 
-  @ManyToMany(() => User, (user) => user.achievements, { onDelete: 'CASCADE' })
-  @JoinTable({ name: 'ach_to_user' })
+  @ManyToMany(() => User, (user) => user.achievements)
   users: User[];
 
   constructor(payload?: Partial<Achievement>) {

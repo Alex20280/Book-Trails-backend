@@ -63,7 +63,7 @@ export class AuthService {
   }
 
   async verifyUserEmail(payload: VerifyEmailDto): Promise<Tokens> {
-    const { email, code } = payload;
+    const { email, code, fireBaseDeviceId } = payload;
     try {
       const user = await this.userRepository.findOneBy({
         email,
@@ -76,6 +76,9 @@ export class AuthService {
 
       user.isVerifyEmail = true;
       user.emailVerificationToken = null;
+      user.firebaseDeviceId = fireBaseDeviceId;
+      user.isSubscribe = true;
+
       const { accessToken, refreshToken } = await this.login(user);
       return { accessToken, refreshToken };
     } catch (error) {
@@ -183,8 +186,7 @@ export class AuthService {
         sessionId: createdSession.id,
       };
 
-      const { accessToken, refreshToken } =
-        await this.generateTokens(tokensPayload);
+      const { accessToken, refreshToken } = await this.generateTokens(tokensPayload);
 
       return {
         accessToken,
@@ -206,9 +208,7 @@ export class AuthService {
     return true;
   }
 
-  async setNewPassword(
-    payload: SetNewPasswordDto | CreateNewPasswordDto,
-  ): Promise<SLoginResponse> {
+  async setNewPassword(payload: SetNewPasswordDto | CreateNewPasswordDto): Promise<SLoginResponse> {
     try {
       let user: User;
       let password: string;
@@ -250,10 +250,7 @@ export class AuthService {
     }
   }
 
-  async changeEmail(
-    id: number,
-    payload: UpdateEmailDto,
-  ): Promise<{ message: string }> {
+  async changeEmail(id: number, payload: UpdateEmailDto): Promise<{ message: string }> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
@@ -393,8 +390,7 @@ export class AuthService {
       name: payload.name,
       sessionId: newSessionId,
     };
-    const { accessToken, refreshToken } =
-      await this.generateTokens(tokensPayload);
+    const { accessToken, refreshToken } = await this.generateTokens(tokensPayload);
 
     return { accessToken, refreshToken };
   }

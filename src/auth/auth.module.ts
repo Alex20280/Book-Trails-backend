@@ -12,6 +12,7 @@ import { JwtStrategy } from './strategies/jwt.startegy';
 import { SessionService } from '@/session/session.service';
 import { Session } from '@/session/entities/session.entity';
 import { RefreshJwtStrategy } from './strategies/jwt-refresh.strategy';
+import { NonStopReading } from '@/non-stop-reading/entities/non-stop-reading.entity';
 
 @Module({
   imports: [
