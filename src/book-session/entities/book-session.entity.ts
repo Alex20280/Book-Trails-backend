@@ -16,6 +16,7 @@ import { ReadingPlace } from '@/common/enums/book.enum';
 @Index('IDX_BOOKSESSION_BOOK', ['book'])
 @Index('IDX_BOOKSESSION_STARTDATE', ['startDate'])
 @Index('IDX_BOOKSESSION_ENDDATE', ['endDate'])
+@Index('IDX_BOOKSESSION_READINGPLACE', ['readingPlace'])
 export class BookSession {
   @PrimaryGeneratedColumn()
   id: number;

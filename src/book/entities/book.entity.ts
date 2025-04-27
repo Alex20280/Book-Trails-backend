@@ -1,9 +1,4 @@
-import {
-  BookStatus,
-  BookType,
-  Language,
-  Source,
-} from '@/common/enums/book.enum';
+import { BookStatus, BookType, Language, Source } from '@/common/enums/book.enum';
 import { User } from '@/user/entities/user.entity';
 import {
   Column,
@@ -68,7 +63,7 @@ export class Book {
     enum: BookType,
     default: BookType.Soft,
   })
-  type: Source;
+  type: BookType;
 
   @Column({ default: false })
   isLegacy: boolean;
@@ -93,7 +88,6 @@ export class Book {
   bookSessions: BookSession[];
 
   @ManyToMany(() => Genre, (genre) => genre.books, { onDelete: 'CASCADE' })
-  @JoinTable({ name: 'book_to_genre' })
   genres: Genre[];
 
   @OneToMany(() => Review, (review) => review.book, { eager: true })

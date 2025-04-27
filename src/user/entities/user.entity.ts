@@ -4,7 +4,10 @@ import {
   Column,
   Entity,
   JoinColumn,
+  JoinTable,
+  ManyToMany,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { CreateUserDto } from '../dto/create-user.dto';
@@ -12,6 +15,8 @@ import { Exclude } from 'class-transformer';
 import { Role, SubscriptionType } from '@/common/enums/user.enum';
 import { Session } from '@/session/entities/session.entity';
 import { Book } from '@/book/entities/book.entity';
+import { Achievement } from '@/achievement/entities/achievement.entity';
+import { NonStopReading } from '@/non-stop-reading/entities/non-stop-reading.entity';
 
 @Entity()
 export class User {
@@ -68,6 +73,9 @@ export class User {
   @Column({ nullable: true, default: false })
   isSubscribe: boolean;
 
+  @Column({ nullable: false, default: 0 })
+  readBookCount: number;
+
   @Exclude()
   @Column()
   createdAt: string;
@@ -93,6 +101,13 @@ export class User {
 
   @OneToMany(() => Book, (book) => book.user)
   books: Book[];
+
+  @ManyToMany(() => Achievement, (achievement) => achievement.users)
+  @JoinTable({ name: 'ach_to_user' })
+  achievements: Achievement[];
+
+  @OneToOne(() => NonStopReading, (nonStopReading) => nonStopReading.user, { onDelete: 'CASCADE' })
+  nonStopReading: NonStopReading;
 
   constructor(payload?: CreateUserDto) {
     if (!payload) return;

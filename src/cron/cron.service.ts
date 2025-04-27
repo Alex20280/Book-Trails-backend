@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -11,6 +11,8 @@ export class CronService {
     @InjectRepository(Session)
     private readonly sessionRepository: Repository<Session>,
   ) {}
+
+  private readonly logger = new Logger(CronService.name);
 
   @Cron('0 * * * *', {
     name: 'delete expired sessions',
@@ -32,12 +34,12 @@ export class CronService {
         .execute();
 
       if (result.affected) {
-        console.log(`Deleted ${result.affected} expired sessions.`);
+        this.logger.log(`Deleted ${result.affected} expired sessions.`);
       } else {
-        console.log('No expired sessions found.');
+        this.logger.log('No expired sessions found.');
       }
     } catch (error) {
-      console.error('Error deleting expired sessions:', error);
+      this.logger.error('Error deleting expired sessions:', error);
     }
   }
 }

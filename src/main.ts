@@ -1,15 +1,13 @@
 import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
-import {
-  ValidationPipe,
-  ClassSerializerInterceptor,
-  VersioningType,
-} from '@nestjs/common';
+import { ValidationPipe, ClassSerializerInterceptor, VersioningType, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 // import { CronService } from './cron/cron.service';
 
 async function bootstrap() {
+  const logger = new Logger('Bootstrap');
+
   const PORT = process.env.PORT || 5000;
 
   const app = await NestFactory.create(AppModule);
@@ -67,6 +65,6 @@ async function bootstrap() {
 
   SwaggerModule.setup('/api/docs', app, document);
 
-  await app.listen(PORT, () => console.log(`server started on port:${PORT}`));
+  await app.listen(PORT, () => logger.log(`server started on port:${PORT}`));
 }
 bootstrap();
