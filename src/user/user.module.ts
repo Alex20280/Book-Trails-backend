@@ -11,10 +11,11 @@ import { JwtModule } from '@nestjs/jwt';
 import { CloudinaryService } from '@/cloudinary/cloudinary.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { NonStopReading } from '@/non-stop-reading/entities/non-stop-reading.entity';
+import { Achievement } from '@/achievement/entities/achievement.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Session, NonStopReading]),
+    TypeOrmModule.forFeature([User, Session, NonStopReading, Achievement]),
     ConfigModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

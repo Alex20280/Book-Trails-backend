@@ -12,12 +12,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import {
-  ApiBearerAuth,
-  ApiConsumes,
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/auth/guards/jwt.auth.guard';
 import { UserDecorator } from '@/common/decorators/user.decorator';
 import { Request as req, Response } from 'express';
@@ -50,6 +45,15 @@ export class UserController {
   @Get('me')
   async me(@UserDecorator('id') userId: number) {
     return this.userService.me(userId);
+  }
+
+  @ApiOperation({
+    summary: 'view your achievemens',
+  })
+  @ApiCustomResponse(HttpStatus.OK, responses.userAch)
+  @Get('achievements')
+  async getUserAch(@UserDecorator('id') userId: number) {
+    return this.userService.getUserAch(userId);
   }
 
   @ApiOperation({

@@ -20,10 +20,7 @@
   },
   "verifyEmailErrors": [
     {
-      "message": [
-        "Incorrect email format",
-        "The email address cannot contain spaces"
-      ],
+      "message": ["Incorrect email format", "The email address cannot contain spaces"],
       "error": "Bad Request",
       "statusCode": 400
     },
@@ -31,6 +28,21 @@
       "message": "Invalid token",
       "error": "Bad Request",
       "statusCode": 400
+    }
+  ],
+
+  "userAch": [
+    {
+      "id": 1,
+      "name": "book_1000_pages",
+      "title": "Book 1000 Pages",
+      "image": "https://res.cloudinary.com/dmbz99tlq/image/upload/v1745387787/1000_page_hjhucg.svg"
+    },
+    {
+      "id": 7,
+      "name": "read_1_books",
+      "title": "Read 1 Books",
+      "image": "https://res.cloudinary.com/dmbz99tlq/image/upload/v1745387779/1_read_book_hpchyr.svg"
     }
   ],
 

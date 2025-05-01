@@ -10,12 +10,15 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { publicIdExtract } from '@/common/helpers/public-id-extraction';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { DeleteAccountDto } from './dto/delete-account.dto';
+import { Achievement } from '@/achievement/entities/achievement.entity';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(Achievement)
+    private achRepository: Repository<Achievement>,
     readonly emailService: EmailService,
     readonly sessionService: SessionService,
     readonly authService: AuthService,
@@ -38,11 +41,11 @@ export class UserService {
     return await this.userRepository.findOneByOrFail({ id });
   }
 
-  async update(
-    id: number,
-    payload: UpdateUserDto,
-    image?: Express.Multer.File,
-  ) {
+  async getUserAch(id: number) {
+    return await this.achRepository.find({ where: { users: { id } } });
+  }
+
+  async update(id: number, payload: UpdateUserDto, image?: Express.Multer.File) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
