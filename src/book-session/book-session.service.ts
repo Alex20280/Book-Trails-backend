@@ -447,7 +447,7 @@ export class BookSessionService {
 
     if (!user.achievements.some((a) => a.id === achievement.id)) {
       user.achievements.push(achievement);
-      await this.notificationService.sendFirstPlaceAch(user.firebaseDeviceId, achName);
+      await this.notificationService.sendAchNoteByAchName(user.firebaseDeviceId, achName);
     }
   }
 
@@ -468,10 +468,7 @@ export class BookSessionService {
         select: ['id'],
       });
       user.achievements.push(achievement);
-      await this.notificationService.sendThreeBooksAchievement(
-        user.firebaseDeviceId,
-        achievementName,
-      );
+      await this.notificationService.sendAchNoteByAchName(user.firebaseDeviceId, achievementName);
     });
 
     await Promise.all(tasks);
@@ -489,7 +486,7 @@ export class BookSessionService {
 
     if (!user.achievements.some((a) => a.id === achievement.id)) {
       user.achievements.push(achievement);
-      await this.notificationService.sendReadBookInOneDayAch(user.firebaseDeviceId, achName);
+      await this.notificationService.sendAchNoteByAchName(user.firebaseDeviceId, achName);
     }
   }
 
@@ -505,7 +502,7 @@ export class BookSessionService {
 
     if (!user.achievements.some((a) => a.id === achievement.id)) {
       user.achievements.push(achievement);
-      await this.notificationService.friendBookAch(user.firebaseDeviceId, achName);
+      await this.notificationService.sendAchNoteByAchName(user.firebaseDeviceId, achName);
     }
   }
 
@@ -518,7 +515,7 @@ export class BookSessionService {
     if (!user.achievements.some((a) => a.id === achievement.id)) {
       user.achievements.push(achievement);
       await this.userRepository.save(user);
-      await this.notificationService.nonStopThirtydaysAch(user.firebaseDeviceId, achName);
+      await this.notificationService.sendAchNoteByAchName(user.firebaseDeviceId, achName);
     }
   }
 }

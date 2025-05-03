@@ -3,6 +3,7 @@ import { SendNotificationDto } from './dto/send-notification.dto';
 import * as firebase from 'firebase-admin';
 import { BookType } from '@/common/enums/book.enum';
 import { AchievementName } from '@/common/enums/ach.enum';
+import { achievementMessages } from './ach.messages';
 
 @Injectable()
 export class NotificationService {
@@ -174,25 +175,19 @@ export class NotificationService {
     }
   }
 
-  async sendFirstPlaceAch(deviceId: string, achievementName: AchievementName) {
-    const readableNames: Partial<Record<AchievementName, string>> = {
-      [AchievementName.BookAtHome]: 'at home',
-      [AchievementName.BookAtWork]: 'at work',
-      [AchievementName.BookInACafe]: 'in a café',
-      [AchievementName.BookInEducationInstitution]: 'in an educational institution',
-      [AchievementName.BookInNature]: 'in nature',
-      [AchievementName.BookInTransport]: 'in transport',
-      [AchievementName.BookOnTheRoad]: 'on the road',
-      [AchievementName.BookInTheLibrary]: 'in the library',
-    };
+  async sendAchNoteByAchName(deviceId: string, achievementName: AchievementName) {
+    const achMessages = achievementMessages;
 
-    const readablePlace = readableNames[achievementName] || 'somewhere special';
+    const message = achMessages[achievementName] || {
+      title: '🎉 Achievement Unlocked!',
+      body: 'You unlocked a new achievement! Keep going 🚀',
+    };
 
     try {
       const response = await firebase.messaging().send({
         notification: {
-          title: '🎯 New Achievement!',
-          body: `You've completed your first book ${readablePlace}! Keep it up 🚀`,
+          title: message.title,
+          body: message.body,
         },
         token: deviceId,
         android: {
@@ -204,187 +199,13 @@ export class NotificationService {
         },
       });
 
-      this.logger.log(`✅ First location achievement notification sent. Response ID: ${response}`);
+      this.logger.log(`✅ Achievement notification sent. Response ID: ${response}`);
       return {
         success: true,
         messageId: response,
       };
     } catch (error) {
-      this.logger.error('❌ Error sending first location achievement notification:', error);
-
-      if (error.code === 'messaging/registration-token-not-registered') {
-        this.logger.warn('⚠️ Invalid firebase token. Should remove from DB.');
-      }
-
-      return {
-        success: false,
-        error: error.message || 'Unknown error',
-      };
-    }
-  }
-
-  async sendThreeBooksAchievement(deviceId: string, achievementName: AchievementName) {
-    const readableAchievements: Partial<Record<AchievementName, string>> = {
-      [AchievementName.ThreeBooksByOneAuthor]: '3 books by one author',
-      [AchievementName.ThreeBooksOfOneGenre]: '3 books of one genre',
-      [AchievementName.ThreeHorrorBooks]: '3 horror books',
-    };
-
-    const readableAchievement = readableAchievements[achievementName] || '3 awesome books';
-
-    try {
-      const response = await firebase.messaging().send({
-        notification: {
-          title: '🏆 New Achievement!',
-          body: `You've read ${readableAchievement}! Fantastic progress 🚀`,
-        },
-        token: deviceId,
-        android: {
-          priority: 'high',
-          notification: {
-            sound: 'default',
-            channelId: 'default',
-          },
-        },
-      });
-
-      this.logger.log(`✅ Three-books achievement notification sent. Response ID: ${response}`);
-      return {
-        success: true,
-        messageId: response,
-      };
-    } catch (error) {
-      this.logger.error('❌ Error sending three-books achievement notification:', error);
-
-      if (error.code === 'messaging/registration-token-not-registered') {
-        this.logger.warn('⚠️ Invalid firebase token. Should remove from DB.');
-      }
-
-      return {
-        success: false,
-        error: error.message || 'Unknown error',
-      };
-    }
-  }
-
-  async sendReadBookInOneDayAch(deviceId: string, achName: AchievementName) {
-    const readableNames: Partial<Record<AchievementName, string>> = {
-      [AchievementName.BookReadInOneDay]: 'Read a book in one day',
-    };
-
-    const readableAchievement = readableNames[achName] || 'Great Achievement';
-
-    try {
-      const response = await firebase.messaging().send({
-        notification: {
-          title: '🎯 New Achievement!',
-          body: `${readableAchievement}! Keep it up 🚀`,
-        },
-        token: deviceId,
-        android: {
-          priority: 'high',
-          notification: {
-            sound: 'default',
-            channelId: 'default',
-          },
-        },
-      });
-
-      this.logger.log(
-        `✅ Read Book in One Day Achievement notification sent. Response ID: ${response}`,
-      );
-      return {
-        success: true,
-        messageId: response,
-      };
-    } catch (error) {
-      this.logger.error('❌ Error sending Read Book in One Day Achievement notification:', error);
-
-      if (error.code === 'messaging/registration-token-not-registered') {
-        this.logger.warn('⚠️ Invalid firebase token. Should remove from DB.');
-      }
-
-      return {
-        success: false,
-        error: error.message || 'Unknown error',
-      };
-    }
-  }
-
-  async friendBookAch(deviceId: string, achName: AchievementName) {
-    const readableNames: Partial<Record<AchievementName, string>> = {
-      [AchievementName.FriendBook]: 'Friend Book',
-    };
-
-    const friendBookAchievement = readableNames[achName] || 'Great Achievement';
-
-    try {
-      const response = await firebase.messaging().send({
-        notification: {
-          title: '🎯 New Achievement!',
-          body: `${friendBookAchievement}! Keep it up 🚀`,
-        },
-        token: deviceId,
-        android: {
-          priority: 'high',
-          notification: {
-            sound: 'default',
-            channelId: 'default',
-          },
-        },
-      });
-
-      this.logger.log(`✅ Friend book Achievement notification sent. Response ID: ${response}`);
-      return {
-        success: true,
-        messageId: response,
-      };
-    } catch (error) {
-      this.logger.error('❌ Error sending Read Book in One Day Achievement notification:', error);
-
-      if (error.code === 'messaging/registration-token-not-registered') {
-        this.logger.warn('⚠️ Invalid firebase token. Should remove from DB.');
-      }
-
-      return {
-        success: false,
-        error: error.message || 'Unknown error',
-      };
-    }
-  }
-
-  async nonStopThirtydaysAch(deviceId: string, achName: AchievementName) {
-    const readableNames: Partial<Record<AchievementName, string>> = {
-      [AchievementName.ReadNonStopThirtyDays]: 'Read non stop thirty days',
-    };
-
-    const nonStopThirtyDaysAchievement = readableNames[achName] || 'Great Achievement';
-
-    try {
-      const response = await firebase.messaging().send({
-        notification: {
-          title: '🎯 New Achievement!',
-          body: `${nonStopThirtyDaysAchievement}! Keep it up 🚀`,
-        },
-        token: deviceId,
-        android: {
-          priority: 'high',
-          notification: {
-            sound: 'default',
-            channelId: 'default',
-          },
-        },
-      });
-
-      this.logger.log(
-        `✅ Read non stop thirty days Achievement notification sent. Response ID: ${response}`,
-      );
-      return {
-        success: true,
-        messageId: response,
-      };
-    } catch (error) {
-      this.logger.error('❌ Read non stop thirty days Achievement notification:', error);
+      this.logger.error('❌ Error sending achievement notification:', error);
 
       if (error.code === 'messaging/registration-token-not-registered') {
         this.logger.warn('⚠️ Invalid firebase token. Should remove from DB.');
