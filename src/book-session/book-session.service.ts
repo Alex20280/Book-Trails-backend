@@ -23,7 +23,6 @@ import { Achievement } from '@/achievement/entities/achievement.entity';
 import { AchievementName } from '@/common/enums/ach.enum';
 import { bookCountAchMap, bookLocationAchMap } from '@/common/helpers/book-ach';
 import { Review } from '@/review/entities/review.entity';
-import { Session } from '@/session/entities/session.entity';
 import { isSameDay } from '@/common/helpers/is.same.day';
 import { NonStopReadingService } from '@/non-stop-reading/non-stop-reading.service';
 
