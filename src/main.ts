@@ -3,6 +3,8 @@ import { AppModule } from './app.module';
 import { ValidationPipe, ClassSerializerInterceptor, VersioningType, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
+import * as dotenv from 'dotenv';
+dotenv.config();
 // import { CronService } from './cron/cron.service';
 
 async function bootstrap() {

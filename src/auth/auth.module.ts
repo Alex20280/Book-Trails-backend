@@ -14,15 +14,16 @@ import { Session } from '@/session/entities/session.entity';
 import { RefreshJwtStrategy } from './strategies/jwt-refresh.strategy';
 import { NonStopReading } from '@/non-stop-reading/entities/non-stop-reading.entity';
 
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 @Module({
   imports: [
     ConfigModule,
     TypeOrmModule.forFeature([User, Session]),
     JwtModule.registerAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
+      useFactory: () => ({
+        secret: process.env.JWT_SECRET,
         signOptions: { expiresIn: '45m' },
       }),
     }),

@@ -7,11 +7,11 @@ import { SessionService } from '@/session/session.service';
 import { JwtPayload } from '@/common/interfaces/jwt.payload.intrface';
 import { AuthService } from '@/auth/auth.service';
 
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 @Injectable()
-export class RefreshJwtStrategy extends PassportStrategy(
-  Strategy,
-  'jwt-refresh',
-) {
+export class RefreshJwtStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
   constructor(
     private readonly authService: AuthService,
     private readonly sessionService: SessionService,

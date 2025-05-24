@@ -26,6 +26,8 @@ import { AchievementModule } from './achievement/achievement.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { NonStopReadingModule } from './non-stop-reading/non-stop-reading.module';
 import * as redisStore from 'cache-manager-ioredis';
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 @Module({
   imports: [
@@ -33,24 +35,17 @@ import * as redisStore from 'cache-manager-ioredis';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    CacheModule.registerAsync({
+    CacheModule.register({
       isGlobal: true,
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        store: redisStore,
-        host: configService.get<string>('REDIS_HOST'),
-        port: configService.get<number>('REDIS_PORT'),
-        ttl: configService.get<number>('REDIS_TTL') || 15,
-        password: configService.get<string>('REDIS_PASSWORD'),
-      }),
+      store: redisStore,
+      host: process.env.REDIS_HOST,
+      port: Number(process.env.REDIS_PORT),
+      ttl: Number(process.env.REDIS_TTL) || 15,
+      password: process.env.REDIS_PASSWORD,
     }),
 
     TypeOrmModule.forRootAsync({
-      useFactory: async (configService: ConfigService) => {
-        return dataSourceOptions(configService);
-      },
-      inject: [ConfigService],
+      useFactory: async () => dataSourceOptions,
     }),
     UserModule,
     AuthModule,

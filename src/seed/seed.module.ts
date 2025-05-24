@@ -19,10 +19,7 @@ import { Achievement } from '@/achievement/entities/achievement.entity';
       envFilePath: '.env',
     }),
     TypeOrmModule.forRootAsync({
-      useFactory: async (configService: ConfigService) => {
-        return dataSourceOptions(configService);
-      },
-      inject: [ConfigService],
+      useFactory: async () => dataSourceOptions,
     }),
     CloudinaryModule,
   ],

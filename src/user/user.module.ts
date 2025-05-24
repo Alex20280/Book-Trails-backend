@@ -13,15 +13,16 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { NonStopReading } from '@/non-stop-reading/entities/non-stop-reading.entity';
 import { Achievement } from '@/achievement/entities/achievement.entity';
 
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, Session, NonStopReading, Achievement]),
     ConfigModule,
     JwtModule.registerAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
+      useFactory: () => ({
+        secret: process.env.JWT_SECRET,
         signOptions: { expiresIn: '45m' },
       }),
     }),

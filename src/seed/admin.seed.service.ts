@@ -7,6 +7,9 @@ import { User } from '@/user/entities/user.entity';
 import { Role, SubscriptionType } from '@/common/enums/user.enum';
 import { ConfigService } from '@nestjs/config';
 
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -25,11 +28,8 @@ export class AdminSeedService {
       const admin = new User();
 
       admin.role = Role.Admin;
-      admin.password = await bcrypt.hash(
-        this.configService.get<string>('ADMIN_PASS'),
-        10,
-      );
-      admin.email = this.configService.get<string>('ADMIN_EMAIL');
+      admin.password = await bcrypt.hash(process.env.ADMIN_PASS, 10);
+      admin.email = process.env.ADMIN_EMAIL;
       admin.isLoggedIn = true;
       admin.isVerifyEmail = true;
       admin.subscriptionType = SubscriptionType.Premium;

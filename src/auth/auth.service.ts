@@ -25,6 +25,9 @@ import { GoogleLoginDto } from './dto';
 import { UpdateEmailDto } from '@/user/dto/update-email.dto';
 import { SessionService } from '@/session/session.service';
 
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 @Injectable()
 export class AuthService {
   private logger: Logger;
@@ -302,7 +305,7 @@ export class AuthService {
         },
         {
           expiresIn: '7d',
-          secret: this.configService.get<string>('REFRESH_JWT_SECRET'),
+          secret: process.env.REFRESH_JWT_SECRET,
         },
       ),
     ]);
@@ -356,7 +359,7 @@ export class AuthService {
 
   async refreshToken(previousRefreshToken: string) {
     const payload = await this.jwtService.verifyAsync(previousRefreshToken, {
-      secret: this.configService.get<string>('REFRESH_JWT_SECRET'),
+      secret: process.env.REFRESH_JWT_SECRET,
     });
 
     const now = Math.floor(Date.now() / 1000);

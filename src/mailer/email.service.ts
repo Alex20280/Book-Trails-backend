@@ -2,6 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
 
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 @Injectable()
 export class EmailService {
   constructor(private configService: ConfigService) {}
@@ -10,15 +13,13 @@ export class EmailService {
   private transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-      user: this.configService.get<string>('GOOGLE_EMAIL'),
-      pass: this.configService.get<string>('GOOGLE_PASSWORD'),
+      user: process.env.GOOGLE_EMAIL,
+      pass: process.env.GOOGLE_PASSWORD,
     },
   });
 
   async sendEmail(email: string, token: string, isPasswordReset: boolean) {
-    const subject = isPasswordReset
-      ? 'Password Reset Request'
-      : 'Email Verification';
+    const subject = isPasswordReset ? 'Password Reset Request' : 'Email Verification';
     const html = isPasswordReset
       ? `
           <p>Hello,</p>
@@ -51,7 +52,7 @@ export class EmailService {
   }
 
   async supportEmail(userEmail: string, message: string) {
-    const supportEmail = this.configService.get<string>('SUPPORT_EMAIL');
+    const supportEmail = process.env.SUPPORT_EMAIL;
     const subject = 'user request';
 
     const html = `
@@ -78,9 +79,7 @@ export class EmailService {
       if (error) {
         this.logger.error(error);
       } else {
-        this.logger.log(
-          `${subject} email sent to ${supportEmail}: ` + info.response,
-        );
+        this.logger.log(`${subject} email sent to ${supportEmail}: ` + info.response);
       }
     });
   }

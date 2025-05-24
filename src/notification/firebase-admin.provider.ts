@@ -1,13 +1,16 @@
 import * as admin from 'firebase-admin';
-import { ConfigService } from '@nestjs/config';
+
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 export const FirebaseAdminProvider = {
   provide: 'FIREBASE_ADMIN',
-  useFactory: (configService: ConfigService) => {
-    const projectId = configService.get<string>('PROJECT_ID');
-    const clientEmail = configService.get<string>('CLIENT_EMAIL');
-    const rawPrivateKey = configService.get<string>('PRIVATE_KEY');
-    const privateKey = rawPrivateKey.replace(/\\n/g, '\n');
+  useFactory: () => {
+    const projectId = process.env.PROJECT_ID;
+
+    const clientEmail = process.env.CLIENT_EMAIL;
+    const rawPrivateKey = process.env.PRIVATE_KEY;
+    const privateKey = rawPrivateKey ? rawPrivateKey.replace(/\\n/g, '\n') : undefined;
 
     if (admin.apps.length === 0) {
       admin.initializeApp({
@@ -21,5 +24,4 @@ export const FirebaseAdminProvider = {
 
     return admin;
   },
-  inject: [ConfigService],
 };
