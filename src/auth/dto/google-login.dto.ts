@@ -6,4 +6,9 @@ export class GoogleLoginDto {
   @IsNotEmpty()
   @IsString()
   googleToken: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  readonly fireBaseDeviceId: string;
 }
