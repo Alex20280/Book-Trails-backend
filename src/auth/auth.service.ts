@@ -167,11 +167,12 @@ export class AuthService {
 
   async googleLogin(payload: GoogleLoginDto) {
     try {
-      const { googleToken } = payload;
+      const { googleToken, fireBaseDeviceId } = payload;
       const user = await this.findOneByParams({ googleToken });
 
       user.googleToken = null;
       user.isLoggedIn = true;
+      user.firebaseDeviceId = fireBaseDeviceId;
 
       const loggedInUser = await this.userRepository.save(user);
 
