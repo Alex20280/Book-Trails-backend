@@ -51,6 +51,11 @@ export class AuthService {
     });
 
     if (existingUser) {
+      if (!existingUser.isVerifyEmail) {
+        throw new ConflictException(
+          'Email is already in use but not verified. Please verify your email or request a new verification link.',
+        );
+      }
       throw new ConflictException('Email already exists');
     }
 
