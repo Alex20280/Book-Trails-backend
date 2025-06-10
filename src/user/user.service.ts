@@ -106,4 +106,15 @@ export class UserService {
       throw new InternalServerErrorException('Failed to delete the account');
     }
   }
+
+  async setFirebaseDeviceId(userId: number, firebaseDeviceId: string): Promise<boolean> {
+    const result = await this.userRepository
+      .createQueryBuilder()
+      .update()
+      .set({ firebaseDeviceId })
+      .where('id = :id', { id: userId })
+      .execute();
+
+    return result.affected !== 0;
+  }
 }

@@ -71,7 +71,7 @@ export class AuthService {
   }
 
   async verifyUserEmail(payload: VerifyEmailDto): Promise<Tokens> {
-    const { email, code, fireBaseDeviceId } = payload;
+    const { email, code } = payload;
     try {
       const user = await this.userRepository.findOneBy({
         email,
@@ -84,7 +84,6 @@ export class AuthService {
 
       user.isVerifyEmail = true;
       user.emailVerificationToken = null;
-      user.firebaseDeviceId = fireBaseDeviceId;
       user.isSubscribe = true;
 
       const { accessToken, refreshToken } = await this.login(user);

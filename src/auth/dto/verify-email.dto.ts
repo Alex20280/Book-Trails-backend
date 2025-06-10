@@ -17,9 +17,4 @@ export class VerifyEmailDto {
   @IsString()
   @IsNotEmpty()
   readonly code: string;
-
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  readonly fireBaseDeviceId: string;
 }

@@ -27,6 +27,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { UpdateEmailDto } from './dto/update-email.dto';
 import { DeleteAccountDto } from './dto/delete-account.dto';
 import { CLoginResponse } from '@/common/interfaces';
+import { SetFirebaseDeviceIdDto } from './dto/set-firebase-device-id.dto';
 
 @ApiTags('User')
 @UseGuards(JwtAuthGuard)
@@ -129,5 +130,13 @@ export class UserController {
   ) {
     response.clearCookie('refresh_token');
     return await this.userService.delete(userId, payload);
+  }
+
+  @Patch('firebase-device-id')
+  async setFirebaseDeviceId(
+    @UserDecorator('id') userId: number,
+    @Body() payload: SetFirebaseDeviceIdDto,
+  ) {
+    return await this.userService.setFirebaseDeviceId(userId, payload.fireBaseDeviceId);
   }
 }
