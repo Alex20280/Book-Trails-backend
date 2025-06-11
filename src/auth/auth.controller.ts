@@ -86,13 +86,13 @@ export class AuthController {
 
   @Public()
   @ApiOperation({
-    summary: 'send code to email for reset password',
+    summary: 'send code to email for reset password or only resent code',
   })
   @Patch('forget-password')
   @ApiCustomResponse(HttpStatus.OK, responses.booalen)
   @ApiCustomResponse(HttpStatus.NOT_FOUND, responses.notFound)
   async forgetPassword(@Body() payload: ForgetPasswordDto): Promise<boolean> {
-    return await this.authService.forgetPassword(payload.email);
+    return await this.authService.forgetPassword(payload);
   }
 
   @Public()

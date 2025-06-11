@@ -26,6 +26,7 @@ import { UpdateEmailDto } from '@/user/dto/update-email.dto';
 import { SessionService } from '@/session/session.service';
 
 import * as dotenv from 'dotenv';
+import { ForgetPasswordDto } from './dto/forget-password.dto';
 dotenv.config();
 
 @Injectable()
@@ -205,14 +206,15 @@ export class AuthService {
     }
   }
 
-  async forgetPassword(email: string): Promise<boolean> {
+  async forgetPassword(payload: ForgetPasswordDto): Promise<boolean> {
+    const { email, isResent } = payload;
     const user = await this.findOneByParams({ email });
     const code = randomBytes(2).toString('hex');
 
     user.resetPasswordCode = code;
 
     await this.userRepository.save(user);
-    await this.emailService.sendEmail(email, code, true);
+    await this.emailService.sendEmail(email, code, isResent);
     return true;
   }
 
