@@ -14,7 +14,6 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
   async validate(email: string, password: string): Promise<any> {
     try {
       const user = await this.authService.validateUser(email.toLowerCase(), password);
-
       return user;
     } catch (error) {
       if (error instanceof EntityNotFoundError) {

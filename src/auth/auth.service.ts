@@ -350,7 +350,7 @@ export class AuthService {
   }
 
   async validateUser(email: string, password: string): Promise<User | null> {
-    const user = await this.userRepository.findOneBy({ email });
+    const user = await this.userRepository.findOneByOrFail({ email });
 
     if (!user.password) {
       throw new BadRequestException('You must set a password for your account');
