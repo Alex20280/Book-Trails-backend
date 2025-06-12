@@ -1,16 +1,15 @@
 import { passwordRegex } from '@/common/regexp';
 
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, OmitType } from '@nestjs/swagger';
 
 import { IsString, Matches, MaxLength, MinLength } from 'class-validator';
 import { ForgetPasswordDto } from '../../auth/dto/forget-password.dto';
 
-export class LoginUserDto extends ForgetPasswordDto {
+export class LoginUserDto extends OmitType(ForgetPasswordDto, ['isResent'] as const) {
   @ApiProperty({ example: '182j2nsdk' })
   @IsString()
   @Matches(passwordRegex, {
-    message:
-      'the password must contain one capital letter, one digit and one special character',
+    message: 'the password must contain one capital letter, one digit and one special character',
   })
   @MinLength(8)
   @MaxLength(20)
