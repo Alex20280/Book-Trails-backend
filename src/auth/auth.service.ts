@@ -3,6 +3,7 @@ import { User } from '@/user/entities/user.entity';
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -53,7 +54,7 @@ export class AuthService {
 
     if (existingUser) {
       if (!existingUser.isVerifyEmail) {
-        throw new ConflictException(
+        throw new ForbiddenException(
           'Email is already in use but not verified. Please verify your email or request a new verification link.',
         );
       }
@@ -65,7 +66,7 @@ export class AuthService {
 
     newUser.password = await bcrypt.hash(payload.password, 10);
     newUser.emailVerificationToken = token;
-
+    ты;
     await this.emailService.sendEmail(payload.email, token, false);
 
     return await this.userRepository.save(newUser);
@@ -349,19 +350,21 @@ export class AuthService {
   }
 
   async validateUser(email: string, password: string): Promise<User | null> {
-    const user = await this.findOneByParams({
-      email,
-    });
+    const user = await this.userRepository.findOneBy({ email });
 
     if (!user.password) {
       throw new BadRequestException('You must set a password for your account');
     }
 
-    if (user && (await bcrypt.compare(password, user.password))) {
-      return user;
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      throw new UnauthorizedException('Invalid credentials');
     }
 
-    return null;
+    if (!user.isVerifyEmail) {
+      throw new ForbiddenException('Please verify your email');
+    }
+
+    return user;
   }
 
   async refreshToken(previousRefreshToken: string) {
