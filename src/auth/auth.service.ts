@@ -66,7 +66,7 @@ export class AuthService {
 
     newUser.password = await bcrypt.hash(payload.password, 10);
     newUser.emailVerificationToken = token;
-    ты;
+
     await this.emailService.sendEmail(payload.email, token, false);
 
     return await this.userRepository.save(newUser);
