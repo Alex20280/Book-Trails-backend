@@ -48,6 +48,7 @@ export class AuthService {
   }
 
   async createUser(payload: CreateUserDto): Promise<User> {
+    console.log('payload :>> ', payload);
     const existingUser = await this.userRepository.findOneBy({
       email: payload.email,
     });
