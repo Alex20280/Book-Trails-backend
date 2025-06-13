@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-local';
 import { EntityNotFoundError } from 'typeorm';
@@ -17,7 +17,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
       return user;
     } catch (error) {
       if (error instanceof EntityNotFoundError) {
-        throw new UnauthorizedException('User not found');
+        throw new NotFoundException('User not found');
       }
       throw error;
     }
